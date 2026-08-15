@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.py[cod]
+.env
+data_raw/
+data_processed/
+
+# Arquivos temporários / sistema
+.DS_Store
+Thumbs.db
+Contexto
+guias
