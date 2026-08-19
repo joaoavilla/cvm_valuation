@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: cvm_dfp_raw
+    description: "Parquets da extração DFP 2010-2024 (pipeline legado, pré-manifesto)"
+    meta:
+      external_location: "../data_processed/cvm/dfp/{name}_2010_2024.parquet"
+    tables:
+      - name: dre
+      - name: bpa
+      - name: bpp
+      - name: dfc_mi
+      - name: dfc_md

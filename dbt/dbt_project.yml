@@ -1,0 +1,30 @@
+
+name: 'dbt_cvm'
+version: '1.0.0'
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'dbt_cvm'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:         # directories to be removed by `dbt clean`
+  - "target"
+  - "dbt_packages"
+
+
+# Materializacao por camada. Staging e view: barata, sempre fresca, e o custo
+# de recomputar e irrelevante em cima de Parquet local.
+models:
+  dbt_cvm:
+    staging:
+      +materialized: view
+
+# Guarda as linhas violadoras em main_dbt_test__audit para inspecao
+# (`select * from main_dbt_test__audit.<nome_do_teste>`), em vez de so contar.
+data_tests:
+  +store_failures: true

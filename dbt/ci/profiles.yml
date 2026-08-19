@@ -1,0 +1,8 @@
+dbt_cvm:
+  target: ci
+
+  outputs:
+    ci:
+      type: duckdb
+      path: ":memory:"
+      threads: 4
