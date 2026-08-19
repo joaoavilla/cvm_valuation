@@ -1,0 +1,107 @@
+version: 2
+
+models:
+
+  - name: stg_cvm__dre
+    description: "DRE consolidada, staging 1:1 do Parquet legado"
+    columns:
+      - name: cd_cvm
+        description: "Código CVM da empresa, texto zero-padded (6 dígitos)"
+        data_tests:
+          - not_null
+
+      - name: valor
+        description: "Valor contábil normalizado para reais"
+        data_tests:
+          - not_null
+
+      - name: ordem_exercicio
+        description: "Indica se o registro pertence ao exercício atual ou comparativo"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['ÚLTIMO', 'PENÚLTIMO']
+
+
+  - name: stg_cvm__bpa
+    description: "Balanço Patrimonial Ativo, staging 1:1 do Parquet legado"
+    columns:
+      - name: cd_cvm
+        description: "Código CVM da empresa, texto zero-padded (6 dígitos)"
+        data_tests:
+          - not_null
+
+      - name: valor
+        description: "Valor contábil normalizado para reais"
+        data_tests:
+          - not_null
+
+      - name: ordem_exercicio
+        description: "Indica se o registro pertence ao exercício atual ou comparativo"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['ÚLTIMO', 'PENÚLTIMO']
+
+
+  - name: stg_cvm__bpp
+    description: "Balanço Patrimonial Passivo, staging 1:1 do Parquet legado"
+    columns:
+      - name: cd_cvm
+        description: "Código CVM da empresa, texto zero-padded (6 dígitos)"
+        data_tests:
+          - not_null
+
+      - name: valor
+        description: "Valor contábil normalizado para reais"
+        data_tests:
+          - not_null
+
+      - name: ordem_exercicio
+        description: "Indica se o registro pertence ao exercício atual ou comparativo"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['ÚLTIMO', 'PENÚLTIMO']
+
+
+  - name: stg_cvm__dfc_mi
+    description: "Demonstração dos Fluxos de Caixa pelo método indireto, staging 1:1 do Parquet legado"
+    columns:
+      - name: cd_cvm
+        description: "Código CVM da empresa, texto zero-padded (6 dígitos)"
+        data_tests:
+          - not_null
+
+      - name: valor
+        description: "Valor contábil normalizado para reais"
+        data_tests:
+          - not_null
+
+      - name: ordem_exercicio
+        description: "Indica se o registro pertence ao exercício atual ou comparativo"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['ÚLTIMO', 'PENÚLTIMO']
+
+
+  - name: stg_cvm__dfc_md
+    description: "Demonstração dos Fluxos de Caixa pelo método direto, staging 1:1 do Parquet legado"
+    columns:
+      - name: cd_cvm
+        description: "Código CVM da empresa, texto zero-padded (6 dígitos)"
+        data_tests:
+          - not_null
+
+      - name: valor
+        description: "Valor contábil normalizado para reais"
+        data_tests:
+          - not_null
+
+      - name: ordem_exercicio
+        description: "Indica se o registro pertence ao exercício atual ou comparativo"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['ÚLTIMO', 'PENÚLTIMO']
