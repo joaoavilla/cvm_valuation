@@ -1,0 +1,24 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  dbt-parse:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Instala dependências
+        run: pip install -r requirements.txt
+
+      - name: Valida o projeto dbt
+        run: dbt parse --profiles-dir ci
+        working-directory: dbt
