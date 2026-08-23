@@ -6,11 +6,11 @@ __pycache__/
 # Dados:
 data_raw/
 data_processed/
+data/
 outputs/
 *.duckdb
 *.duckdb.wal
 *.duckdb.tmp/
-
 dbt/ci/.user.yml
 
 # Arquivos temporários / sistema
