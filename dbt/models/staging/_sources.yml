@@ -2,12 +2,19 @@ version: 2
 
 sources:
   - name: cvm_dfp_raw
-    description: "Parquets da extração DFP 2010-2024 (pipeline legado, pré-manifesto)"
+    description: "Raw da ingestão v2 — 1 CSV da CVM = 1 Parquet, particionado por ano"
     meta:
-      external_location: "../data_processed/cvm/dfp/{name}_2010_2024.parquet"
+      external_location: "read_parquet('../data/raw/dfp/ano=*/{name}.parquet', hive_partitioning = true)"
     tables:
-      - name: dre
-      - name: bpa
-      - name: bpp
-      - name: dfc_mi
-      - name: dfc_md
+      - name: dre_con
+      - name: dre_ind
+      - name: bpa_con
+      - name: bpa_ind
+      - name: bpp_con
+      - name: bpp_ind
+      - name: dfc_mi_con
+      - name: dfc_mi_ind
+      - name: dfc_md_con
+      - name: dfc_md_ind
+      - name: cadastro
+
