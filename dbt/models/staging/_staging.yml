@@ -3,10 +3,22 @@ version: 2
 models:
 
   - name: stg_cvm__dre
-    description: "DRE consolidada, staging 1:1 do Parquet legado"
+    description: "DRE unificada (consolidada + individual), transformada a partir do raw CVM"
     columns:
       - name: cd_cvm
-        description: "Código CVM da empresa, texto zero-padded (6 dígitos)"
+        description: "Código CVM da empresa"
+        data_tests:
+          - not_null
+
+      - name: tipo_df
+        description: "Tipo da demonstração financeira: consolidada ou individual"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['CONSOLIDADO', 'INDIVIDUAL']
+
+      - name: dt_fim_exercicio
+        description: "Data final do período contábil ao qual o valor se refere"
         data_tests:
           - not_null
 
@@ -24,10 +36,22 @@ models:
 
 
   - name: stg_cvm__bpa
-    description: "Balanço Patrimonial Ativo, staging 1:1 do Parquet legado"
+    description: "Balanço Patrimonial Ativo unificado (consolidado + individual), transformado a partir do raw CVM"
     columns:
       - name: cd_cvm
-        description: "Código CVM da empresa, texto zero-padded (6 dígitos)"
+        description: "Código CVM da empresa"
+        data_tests:
+          - not_null
+
+      - name: tipo_df
+        description: "Tipo da demonstração financeira: consolidada ou individual"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['CONSOLIDADO', 'INDIVIDUAL']
+
+      - name: dt_fim_exercicio
+        description: "Data da posição patrimonial"
         data_tests:
           - not_null
 
@@ -45,10 +69,22 @@ models:
 
 
   - name: stg_cvm__bpp
-    description: "Balanço Patrimonial Passivo, staging 1:1 do Parquet legado"
+    description: "Balanço Patrimonial Passivo unificado (consolidado + individual), transformado a partir do raw CVM"
     columns:
       - name: cd_cvm
-        description: "Código CVM da empresa, texto zero-padded (6 dígitos)"
+        description: "Código CVM da empresa"
+        data_tests:
+          - not_null
+
+      - name: tipo_df
+        description: "Tipo da demonstração financeira: consolidada ou individual"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['CONSOLIDADO', 'INDIVIDUAL']
+
+      - name: dt_fim_exercicio
+        description: "Data da posição patrimonial"
         data_tests:
           - not_null
 
@@ -66,10 +102,22 @@ models:
 
 
   - name: stg_cvm__dfc_mi
-    description: "Demonstração dos Fluxos de Caixa pelo método indireto, staging 1:1 do Parquet legado"
+    description: "DFC pelo método indireto unificada (consolidada + individual), transformada a partir do raw CVM"
     columns:
       - name: cd_cvm
-        description: "Código CVM da empresa, texto zero-padded (6 dígitos)"
+        description: "Código CVM da empresa"
+        data_tests:
+          - not_null
+
+      - name: tipo_df
+        description: "Tipo da demonstração financeira: consolidada ou individual"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['CONSOLIDADO', 'INDIVIDUAL']
+
+      - name: dt_fim_exercicio
+        description: "Data final do período contábil ao qual o fluxo se refere"
         data_tests:
           - not_null
 
@@ -87,10 +135,22 @@ models:
 
 
   - name: stg_cvm__dfc_md
-    description: "Demonstração dos Fluxos de Caixa pelo método direto, staging 1:1 do Parquet legado"
+    description: "DFC pelo método direto unificada (consolidada + individual), transformada a partir do raw CVM"
     columns:
       - name: cd_cvm
-        description: "Código CVM da empresa, texto zero-padded (6 dígitos)"
+        description: "Código CVM da empresa"
+        data_tests:
+          - not_null
+
+      - name: tipo_df
+        description: "Tipo da demonstração financeira: consolidada ou individual"
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['CONSOLIDADO', 'INDIVIDUAL']
+
+      - name: dt_fim_exercicio
+        description: "Data final do período contábil ao qual o fluxo se refere"
         data_tests:
           - not_null
 
