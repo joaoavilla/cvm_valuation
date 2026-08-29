@@ -19,6 +19,10 @@ jobs:
       - name: Instala dependências
         run: pip install -r requirements.txt
 
+      - name: Instala pacotes dbt
+        run: dbt deps
+        working-directory: dbt
+
       - name: Valida o projeto dbt
         run: dbt parse --profiles-dir ci
         working-directory: dbt
