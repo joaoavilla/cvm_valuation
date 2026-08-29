@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: fct_fundamentos
+    description: >
+      Tabela fato central dos fundamentos financeiros da CVM,
+      preservando período econômico e safra documental.
+
+    data_tests:
+      # O grão declarado da tabela deve ser único.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cd_cvm
+              - dt_fim_exercicio
+              - tipo_df
+              - cd_conta
+              - dt_referencia
+
+      # Um fato econômico não pode terminar depois
+      # da safra documental em que foi reportado.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "dt_fim_exercicio <= dt_referencia"
+
+      # Em geral, a safra original fecha no mesmo ano do documento.
+      # Há exceções legítimas por exercícios não-calendário,
+      # portanto violações geram WARN, não ERROR.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: >
+              not (
+                safra_original
+                and year(dt_fim_exercicio) != year(dt_referencia)
+              )
+          config:
+            severity: warn
+
+    columns:
+      - name: ano_exercicio
+        description: Ano econômico derivado de dt_fim_exercicio.
+        data_tests:
+          - not_null
