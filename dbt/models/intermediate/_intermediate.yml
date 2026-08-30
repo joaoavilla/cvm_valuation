@@ -1,0 +1,120 @@
+version: 2
+
+models:
+  - name: int_dfp_unificado
+    description: >
+      Empilha os cinco demonstrativos num único grão, preservando período
+      econômico, safra documental e tipo de demonstrativo.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - demonstrativo
+              - cd_cvm
+              - tipo_df
+              - dt_referencia
+              - dt_fim_exercicio
+              - cd_conta
+    columns:
+      - name: demonstrativo
+        description: Demonstrativo de origem da linha.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['DRE', 'BPA', 'BPP', 'DFC_MI', 'DFC_MD']
+      - name: cd_cvm
+        data_tests:
+          - not_null
+      - name: dt_fim_exercicio
+        description: Fim do período a que o valor se refere.
+        data_tests:
+          - not_null
+      - name: tipo_df
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['CONSOLIDADO', 'INDIVIDUAL']
+
+  - name: int_cadastro_documentos
+    description: >
+      Documentos entregues à CVM com a respectiva data de recebimento, que
+      é a data em que a informação passou a ser pública. A chave
+      (cd_cvm, dt_referencia, versao) não é única na fonte: a CVM registra
+      documentos distintos sob o mesmo número de versão. A deduplicação é
+      feita em fct_fundamentos, mantendo a entrega mais recente.
+    columns:
+      - name: cd_cvm
+        data_tests:
+          - not_null
+      - name: dt_referencia
+        data_tests:
+          - not_null
+      - name: dt_recebimento
+        description: Data em que o documento ficou público.
+        data_tests:
+          - not_null
+
+  - name: int_empresas_tipo_df
+    description: >
+      Política de escolha entre demonstrativo consolidado e individual, por
+      empresa e exercício. Consolidado quando existir, individual caso
+      contrário. Materializada como dado para que a base usada em cada
+      exercício seja auditável.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cd_cvm
+              - dt_fim_exercicio
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not (tem_consolidado and tipo_df_escolhido != 'CONSOLIDADO')"
+    columns:
+      - name: cd_cvm
+        data_tests:
+          - not_null
+      - name: dt_fim_exercicio
+        data_tests:
+          - not_null
+      - name: tipo_df_escolhido
+        description: Base efetivamente usada pelos marts neste exercício.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['CONSOLIDADO', 'INDIVIDUAL']
+
+  - name: int_revisoes_entre_safras
+    description: >
+      Compara o valor de um exercício como publicado no documento do próprio
+      ano contra o mesmo exercício reapresentado no documento do ano seguinte.
+      Materializa a tese do produto: parte relevante dos valores muda depois
+      de divulgada, e nenhum provedor gratuito expõe isso.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cd_cvm
+              - tipo_df
+              - demonstrativo
+              - cd_conta
+              - dt_fim_exercicio
+              - dt_referencia_revisada
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "dt_referencia_revisada > dt_referencia_original"
+    columns:
+      - name: cd_cvm
+        data_tests:
+          - not_null
+      - name: dt_fim_exercicio
+        data_tests:
+          - not_null
+      - name: valor_original
+        data_tests:
+          - not_null
+      - name: valor_revisado
+        data_tests:
+          - not_null
