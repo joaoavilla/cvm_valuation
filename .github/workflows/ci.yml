@@ -5,24 +5,32 @@ on:
   push:
     branches: [main]
 
-jobs:
-  dbt-parse:
-    runs-on: ubuntu-latest
+concurrency:
+  group: ci-${{ github.ref }}      
+  cancel-in-progress: true
 
+jobs:
+  dbt-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10            
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-
+          cache: pip               
       - name: Instala dependências
         run: pip install -r requirements.txt
 
-      - name: Instala pacotes dbt
-        run: dbt deps
-        working-directory: dbt
+      - name: Testes de Python (ingestão)
+        run: python -m pytest -v
 
-      - name: Valida o projeto dbt
-        run: dbt parse --profiles-dir ci
+      - name: Coloca as fixtures onde os sources esperam (decisão D5)
+        run: mkdir -p data/raw && cp -r tests/fixtures/raw/dfp data/raw/dfp
+
+      - name: Compila e executa TUDO com dados de amostra
+        run: |
+          dbt deps
+          dbt build --profiles-dir ci
         working-directory: dbt
