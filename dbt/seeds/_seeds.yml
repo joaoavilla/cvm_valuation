@@ -1,0 +1,77 @@
+version: 2
+
+seeds:
+  - name: contas_canonicas
+    description: >
+      Traduz a conta da CVM em conceito econômico. Curadoria humana - gerada e
+      validada por `scripts/gerar_seed_contas.py`.
+
+    columns:
+      - name: demonstrativo
+        description: "DRE, BPA, BPP, DFC_MI ou DFC_MD."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['DRE', 'BPA', 'BPP', 'DFC_MI', 'DFC_MD']
+
+      - name: cd_conta
+        description: "Código hierárquico da CVM. Não é único: o mesmo código tem significados distintos entre planos."
+        data_tests:
+          - not_null
+
+      - name: ds_conta
+        description: "Descrição exata da CVM. Faz parte da chave — é ela que desambigua o código."
+        data_tests:
+          - not_null
+
+      - name: conceito
+        description: "Nome econômico interno consumido pelos marts."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - ativo_total
+                  - ativo_circulante
+                  - ativo_nao_circulante
+                  - caixa_e_equivalentes
+                  - passivo_total
+                  - passivo_circulante
+                  - passivo_nao_circulante
+                  - patrimonio_liquido
+                  - receita_liquida
+                  - custo
+                  - lucro_bruto
+                  - despesas_operacionais
+                  - ebit
+                  - resultado_financeiro
+                  - lucro_antes_tributos
+                  - lucro_liquido
+                  - fluxo_caixa_operacional
+                  - fluxo_caixa_investimento
+                  - fluxo_caixa_financiamento
+                  - fin_receita_intermediacao
+                  - fin_despesa_intermediacao
+                  - fin_resultado_intermediacao
+                  - fin_receita_seguros
+
+      - name: plano
+        description: >
+          Variante do plano de contas em que a descrição aparece.
+          PADRAO = não-financeira pós-IFRS · FINANCEIRO = banco ·
+          SEGURADORA = seguros · LEGADO = pré-convergência IFRS ·
+          DESLOCADO = numeração deslocada (3.07 = 3.05 do padrão).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['PADRAO', 'FINANCEIRO', 'SEGURADORA', 'LEGADO', 'DESLOCADO']
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - demonstrativo
+              - cd_conta
+              - ds_conta

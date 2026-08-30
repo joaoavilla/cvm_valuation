@@ -41,3 +41,52 @@ models:
         description: Ano econômico derivado de dt_fim_exercicio.
         data_tests:
           - not_null
+
+  - name: mart_fundamentos_anuais
+    description: >
+      Fundamentos anuais por empresa, prontos para leitura. Uma linha por
+      empresa e exercício, na safra original, com a base consolidada ou
+      individual escolhida pela política. Indicadores de margem saem nulos
+      para instituições financeiras por construção do modelo.
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cd_cvm
+              - dt_fim_exercicio
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not (flag_financeira and margem_liquida is not null)"
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "ano_exercicio = year(dt_fim_exercicio)"
+
+    columns:
+      - name: cd_cvm
+        data_tests:
+          - not_null
+      - name: dt_fim_exercicio
+        description: Fim do exercício social. Compõe o grão com cd_cvm.
+        data_tests:
+          - not_null
+      - name: razao_social
+        data_tests:
+          - not_null
+      - name: tipo_df
+        description: Base usada neste exercício, vinda da política con/ind.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['CONSOLIDADO', 'INDIVIDUAL']
+      - name: ativo_total
+        description: >
+          Nulo apenas quando a empresa registrou descrição corrompida na conta
+          de ativo total, caso em que o valor não é mapeado pelo seed.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
