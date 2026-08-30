@@ -1,4 +1,12 @@
+{{ config(severity = 'warn' if target.name == 'ci' else 'error') }}
+
 -- Toda linha do seed precisa corresponder a uma conta que existe de fato.
+--
+-- SEVERIDADE POR AMBIENTE: no CI o dado e uma amostra de 7 empresas, entao
+-- linhas do seed que descrevem planos de contas que essas empresas nao usam
+-- (DFC_MD, seguradora, variantes raras) nao tem correspondencia -- ausencia
+-- legitima, nao erro. Contra a base completa a afirmacao vale e o teste e
+-- error: foi ele que pegou 30 chaves quebradas quando os acentos se perderam.
 --
 -- Por que: a chave do seed inclui ds_conta, casada por igualdade exata. Um
 -- acento errado, um espaco a mais ou uma descricao que a CVM parou de usar
