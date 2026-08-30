@@ -1,0 +1,67 @@
+LICENCA DOS DADOS
+=================
+
+Este arquivo cobre os DADOS distribuidos neste repositorio. O codigo esta sob
+licenca MIT, em LICENSE — sao objetos distintos, com licencas distintas.
+
+
+DADOS COBERTOS
+--------------
+
+    tests/fixtures/raw/dfp/**   (176 arquivos Parquet, ~1,9 MB)
+
+Amostra derivada dos microdados publicos de Demonstracoes Financeiras
+Padronizadas (DFP) das companhias abertas brasileiras. Contem os registros de
+7 empresas (CD_CVM 001023, 005410, 006629, 008427, 009512, 019364, 026557)
+nos exercicios de 2010 a 2025, filtrados a partir da base original sem
+alteracao de valores.
+
+Os arquivos em data/ NAO sao versionados e nao sao distribuidos por este
+repositorio — sao baixados da fonte pelo proprio pipeline.
+
+
+FONTE
+-----
+
+    Comissao de Valores Mobiliarios (CVM) — Portal de Dados Abertos
+    https://dados.cvm.gov.br/dataset/cia_aberta-doc-dfp
+
+    Conjunto: CIA_ABERTA / DOC / DFP
+    Licenca declarada pela fonte: odc-odbl
+
+
+LICENCA
+-------
+
+Open Database License (ODbL) v1.0
+https://opendatacommons.org/licenses/odbl/1-0/
+
+O que isso implica para quem usa ou redistribui estes dados:
+
+  ATRIBUICAO      Ao usar ou redistribuir a base, ou qualquer base derivada
+                  dela, cite a fonte original (CVM) e esta licenca.
+
+  SHARE-ALIKE     Bases derivadas distribuidas publicamente devem ser
+                  licenciadas sob ODbL.
+
+  KEEP OPEN       Se a base for redistribuida com restricao tecnica, uma
+                  versao sem restricao deve ser disponibilizada em paralelo.
+
+O texto integral da licenca esta no endereco acima e prevalece sobre este
+resumo, que existe apenas para orientacao.
+
+
+ATRIBUICAO SUGERIDA
+-------------------
+
+    Contem informacoes da Comissao de Valores Mobiliarios (CVM), obtidas do
+    Portal de Dados Abertos e disponibilizadas sob Open Database License
+    (ODbL) v1.0.
+
+
+AVISO
+-----
+
+Este resumo nao e aconselhamento juridico. Em caso de duvida sobre uso
+comercial ou redistribuicao, consulte o texto integral da ODbL e os termos
+do portal da CVM.
