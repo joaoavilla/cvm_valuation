@@ -88,10 +88,15 @@ models:
 
   - name: int_revisoes_entre_safras
     description: >
-      Compara o valor de um exercício como publicado no documento do próprio
-      ano contra o mesmo exercício reapresentado no documento do ano seguinte.
-      Materializa a tese do produto: parte relevante dos valores muda depois
-      de divulgada, e nenhum provedor gratuito expõe isso.
+      Compara o valor de um exercício como publicado no documento do próprio ano
+      contra o mesmo exercício reapresentado no documento seguinte. O join casa
+      por código, não por descrição, de propósito: migração de plano de contas
+      precisa aparecer, não sumir.
+      Em 2,99% dos pares a descrição muda entre as safras, e nesse grupo a taxa
+      de mudança material é 35,82% contra 3,24% quando a descrição é a mesma —
+      a causa dominante é renumeração em cascata do BPA 1.02.01.x, não revisão
+      contábil. Use `where comparavel is not true` para isolar os pares
+      suspeitos; `where not mesmo_conceito` pega apenas 68 linhas e engana.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -107,14 +112,22 @@ models:
             expression: "dt_referencia_revisada > dt_referencia_original"
     columns:
       - name: cd_cvm
-        data_tests:
-          - not_null
+        data_tests: [not_null]
       - name: dt_fim_exercicio
-        data_tests:
-          - not_null
+        data_tests: [not_null]
       - name: valor_original
-        data_tests:
-          - not_null
+        data_tests: [not_null]
       - name: valor_revisado
-        data_tests:
-          - not_null
+        data_tests: [not_null]
+      - name: mesma_descricao
+        description: Igualdade byte a byte entre as descrições das duas safras.
+        data_tests: [not_null]
+      - name: mesmo_conceito
+        description: >
+          Tri-state. NULL significa que o seed não cobre uma das duas descrições
+          e nada pode ser afirmado — é informação, não falha.
+      - name: comparavel
+        description: >
+          Regra de leitura consolidada, também tri-state. true = mesmo conceito
+          confirmado ou descrição cosmeticamente equivalente. false = troca de
+          conceito provada. NULL = indeterminado.
