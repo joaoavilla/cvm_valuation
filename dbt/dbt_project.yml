@@ -23,6 +23,10 @@ models:
   dbt_cvm:
     staging:
       +materialized: view
+    intermediate:
+      +materialized: table
+    marts:
+      +materialized: table
 
 # Guarda as linhas violadoras em main_dbt_test__audit para inspecao
 # (`select * from main_dbt_test__audit.<nome_do_teste>`), em vez de so contar.
