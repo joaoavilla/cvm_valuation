@@ -14,9 +14,12 @@ outputs/
 dbt/ci/.user.yml
 
 # Arquivos temporários / sistema
+report-source.md
 Contexto/
 guias/
 logs/
 .DS_Store
 Thumbs.db
 .vscode/
+/.quarto/
+**/*.quarto_ipynb

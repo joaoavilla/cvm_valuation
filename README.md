@@ -2,7 +2,7 @@
 
 Pipeline de dados sobre as demonstrações financeiras das companhias abertas brasileiras (CVM), com modelagem que separa **o período a que um valor se refere** do **documento em que ele foi publicado**.
 
-> **Estado:** em construção. A plataforma de dados funciona ponta a ponta; a camada de consumo (console de research) ainda não existe. Este README descreve o que há hoje, não o que se pretende.
+> **Estado:** em construção. A plataforma funciona ponta a ponta e há uma primeira camada de leitura (`docs/`, gerada por Quarto). Este README descreve o que há hoje, não o que se pretende.
 
 ---
 
@@ -29,6 +29,11 @@ A maior parte dos consumidores desse dado ignora a distinção - inclusive a ver
 | `fct_fundamentos` | Grão `(empresa, período, safra, tipo_df, conta)` - a tabela central |
 | `int_revisoes_entre_safras` | Compara o valor publicado no ano contra o reapresentado no ano seguinte |
 | `mart_fundamentos_anuais` | Uma linha por empresa e exercício, com indicadores |
+| `mart_empresa_visao` | Camada de leitura: percentil contra o mercado e sinalização de revisão |
+
+**Leitura** (`index.qmd`, `empresa.qmd`) — relatório Quarto sobre o warehouse, renderizado em `docs/` para GitHub Pages.
+
+> `docs/` é saída gerada e mesmo assim versionada — exceção deliberada à regra de não versionar artefato, porque o GitHub Pages serve a partir do repositório. Reproduzível com `quarto render`. Note que o render limpa o diretório: o `.nojekyll` precisa ser recriado depois, senão o Pages ignora `site_libs/` e a página sai sem estilo.
 
 **Escala:** 16 anos (2010–2025) · 1.223 empresas · ~8,5 M linhas no fato · 10.847 linhas no mart. Roda em uma máquina, em segundos. Não há aqui volume que justifique processamento distribuído, e o projeto não finge que há.
 
@@ -41,6 +46,8 @@ A maior parte dos consumidores desse dado ignora a distinção - inclusive a ver
 **Instituições financeiras têm conceitos próprios.** A receita de um banco é `fin_receita_intermediacao`, não `receita_liquida`. Isso faz margem de banco sair nula por construção do modelo, sem filtro no consumidor.
 
 **O mart tem grão `(empresa, fim do exercício)`, não `(empresa, ano)`.** Vinte empresas mudaram o fim do exercício social e têm dois fechamentos no mesmo ano civil.
+
+**Margem e ROE usam a base dos controladores, não a consolidada.** O lucro dos minoritários pertence a terceiros dentro de subsidiárias, não a quem compra a ação — é a convenção dos sites de fundamentos. As versões consolidadas ficam em colunas próprias (`margem_liquida_consolidada`, `roe_consolidado`), porque o número não existe sem a definição. Validado contra fonte externa: a margem da WEG bate ao centésimo em 2021–2025.
 
 ---
 
@@ -73,7 +80,14 @@ dbt deps && dbt seed && dbt build
 dbt docs generate && dbt docs serve                     # linhagem no navegador
 ```
 
-Os comandos do dbt rodam de dentro de `dbt/` - os caminhos das fontes são relativos a esse diretório.
+Os comandos do dbt rodam de dentro de `dbt/` — os caminhos das fontes são relativos a esse diretório, ou absolutos via `CVM_RAW_DIR`.
+
+Para o relatório de leitura, a partir da raiz (requer [Quarto](https://quarto.org)):
+
+```bash
+quarto render                                           # gera docs/
+quarto preview                                          # visualiza
+```
 
 ---
 

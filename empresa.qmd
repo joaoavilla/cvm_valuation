@@ -1,0 +1,82 @@
+---
+title: "Ficha da empresa"
+---
+
+```{python}
+#| echo: false
+import duckdb, os
+import matplotlib.pyplot as plt
+
+CD_CVM = "005410"
+
+con = duckdb.connect("warehouse.duckdb", read_only=True)
+d = con.sql(f"""
+    select * from mart_empresa_visao
+    where cd_cvm = '{CD_CVM}'
+    order by dt_fim_exercicio
+""").df()
+nome = d["razao_social"].iloc[-1]
+ult = d.iloc[-1]
+
+def pct(x, casas=1):
+    return f"{x:.{casas}%}" if x == x else "—"
+
+def num(x, casas=2):
+    return f"{x:.{casas}f}" if x == x else "—"
+```
+
+# `{python} nome`
+
+**Exercício `{python} int(ult.ano_exercicio)`** · base `{python} ult.tipo_df.lower()`
+
+| Indicador | Controladores | Consolidado | Percentil do mercado |
+|---|---:|---:|---:|
+| Margem líquida | `{python} pct(ult.margem_liquida)` | `{python} pct(ult.margem_liquida_consolidada)` | `{python} pct(ult.pct_margem_liquida, 0)` |
+| ROE | `{python} pct(ult.roe)` | `{python} pct(ult.roe_consolidado)` | `{python} pct(ult.pct_roe, 0)` |
+| Margem bruta | `{python} pct(ult.margem_bruta)` | | |
+| Margem EBIT | `{python} pct(ult.margem_ebit)` | | |
+| Liquidez corrente | `{python} num(ult.liquidez_corrente)` | | `{python} pct(ult.pct_liquidez, 0)` |
+
+*Controladores* usa o lucro atribuído aos sócios da controladora e o PL sem a
+participação de não controladores — a convenção dos sites de fundamentos.
+*Consolidado* inclui a parcela dos minoritários. A diferença é o que pertence a
+terceiros dentro das subsidiárias.
+
+```{python}
+#| echo: false
+if ult.teve_revisao_material:
+    print(f"⚠️  Este exercício foi revisado: até {ult.maior_revisao_pct:.1%} "
+          f"de variação numa linha-síntese, publicada em {ult.revisado_em}.")
+else:
+    print("✓ Nenhuma linha-síntese deste exercício foi revisada na safra seguinte.")
+```
+
+## Receita e lucro
+
+```{python}
+#| echo: false
+fig, ax = plt.subplots(figsize=(9, 3.5))
+ax.plot(d.ano_exercicio, d.receita_liquida / 1e9, marker="o", label="Receita")
+ax.plot(d.ano_exercicio, d.lucro_liquido_controladores / 1e9, marker="o", label="Lucro (controladores)")
+ax.set_ylabel("R$ bilhões"); ax.legend(); ax.grid(alpha=.3)
+plt.tight_layout(); plt.show()
+```
+
+## Margem e ROE
+
+```{python}
+#| echo: false
+fig, ax = plt.subplots(figsize=(9, 3.5))
+ax.plot(d.ano_exercicio, d.margem_liquida * 100, marker="o", label="Margem líquida")
+ax.plot(d.ano_exercicio, d.roe * 100, marker="o", label="ROE")
+ax.set_ylabel("%"); ax.legend(); ax.grid(alpha=.3)
+plt.tight_layout(); plt.show()
+```
+
+## Série completa
+
+```{python}
+#| echo: false
+d[["ano_exercicio", "tipo_df", "receita_liquida", "lucro_liquido_controladores",
+   "margem_liquida", "roe", "liquidez_corrente", "teve_revisao_material"]]
+```

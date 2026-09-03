@@ -36,18 +36,30 @@ seeds:
                   - ativo_circulante
                   - ativo_nao_circulante
                   - caixa_e_equivalentes
+                  - contas_a_receber
+                  - estoques
                   - passivo_total
                   - passivo_circulante
                   - passivo_nao_circulante
                   - patrimonio_liquido
+                  - pl_minoritarios
+                  - fornecedores
+                  - divida_bruta_circulante
+                  - divida_bruta_nao_circulante
                   - receita_liquida
                   - custo
                   - lucro_bruto
                   - despesas_operacionais
+                  - despesas_vendas
+                  - despesas_administrativas
+                  - equivalencia_patrimonial
                   - ebit
                   - resultado_financeiro
+                  - receitas_financeiras
+                  - despesas_financeiras
                   - lucro_antes_tributos
                   - lucro_liquido
+                  - lucro_liquido_controladores
                   - fluxo_caixa_operacional
                   - fluxo_caixa_investimento
                   - fluxo_caixa_financiamento

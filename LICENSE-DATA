@@ -19,6 +19,10 @@ alteracao de valores.
 Os arquivos em data/ NAO sao versionados e nao sao distribuidos por este
 repositorio — sao baixados da fonte pelo proprio pipeline.
 
+O site renderizado em docs/ (tabelas e graficos agregados) e "produced work"
+derivado da base, nao uma base de dados: leva o aviso de atribuicao no rodape
+de cada pagina, conforme a ODbL exige para obras produzidas.
+
 
 FONTE
 -----
