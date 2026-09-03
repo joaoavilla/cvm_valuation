@@ -48,6 +48,10 @@ models:
       empresa e exercício, na safra original, com a base consolidada ou
       individual escolhida pela política. Indicadores de margem saem nulos
       para instituições financeiras por construção do modelo.
+      Margem líquida e ROE usam o lucro atribuído aos sócios da controladora e o
+      PL sem a participação de não controladores (convenção de análise de ações,
+      validada contra fonte externa em WEG 2021–2025). As versões consolidadas,
+      que incluem minoritários, ficam em colunas próprias.
 
     data_tests:
       - dbt_utils.unique_combination_of_columns:
@@ -63,6 +67,19 @@ models:
       - dbt_utils.expression_is_true:
           arguments:
             expression: "ano_exercicio = year(dt_fim_exercicio)"
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "roe is null or abs(roe) < 100"
+          config:
+            severity: warn
+
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "divida_bruta >= 0"
+          config:
+            where: "not (cd_cvm = '022446' and ano_exercicio = 2014)
+                    and not (cd_cvm = '026263' and ano_exercicio = 2019)"
 
     columns:
       - name: cd_cvm
@@ -82,6 +99,36 @@ models:
           - accepted_values:
               arguments:
                 values: ['CONSOLIDADO', 'INDIVIDUAL']
+      - name: lucro_liquido
+        description: Lucro consolidado do período, incluindo a parcela de não controladores.
+      - name: lucro_liquido_controladores
+        description: >
+          Lucro atribuído aos sócios da controladora. Nulo quando a empresa não
+          abre a linha, caso em que os indicadores recuam para o consolidado.
+      - name: pl_minoritarios
+        description: Participação dos acionistas não controladores dentro do PL.
+      - name: patrimonio_liquido_controladores
+        description: PL menos a participação de não controladores.
+      - name: divida_bruta
+        description: >
+          Empréstimos e financiamentos, circulante mais não circulante. Zero
+          quando a empresa não tem dívida ou não abre a conta — não distingue
+          os dois casos. Duas exceções de fonte com valor negativo estão
+          excluídas do teste: K-INFRA 2014 e VERT-VIRTUS 2019.
+      - name: divida_liquida
+        description: Dívida bruta menos caixa e equivalentes.
+      - name: alavancagem
+        description: Dívida líquida sobre PL dos controladores.
+      - name: cobertura_juros
+        description: EBIT sobre despesas financeiras em valor absoluto.
+      - name: margem_liquida
+        description: Lucro dos controladores sobre receita líquida.
+      - name: margem_liquida_consolidada
+        description: Lucro consolidado sobre receita líquida.
+      - name: roe
+        description: Lucro dos controladores sobre PL dos controladores.
+      - name: roe_consolidado
+        description: Lucro consolidado sobre PL consolidado.
       - name: ativo_total
         description: >
           Nulo apenas quando a empresa registrou descrição corrompida na conta
@@ -90,3 +137,22 @@ models:
           - not_null:
               config:
                 severity: warn
+                
+  - name: mart_empresa_visao
+    description: >
+      Camada de leitura: fundamentos anuais mais percentil contra o universo
+      não-financeiro do mesmo exercício e sinalização de revisão entre safras.
+      Percentis excluem nulos do ranking em vez de ordená-los por último.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cd_cvm, dt_fim_exercicio]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "pct_roe is null or (pct_roe >= 0 and pct_roe <= 1)"
+    columns:
+      - name: cd_cvm
+        data_tests: [not_null]
+      - name: teve_revisao_material
+        description: Se alguma linha-síntese deste exercício mudou na safra seguinte.
+        data_tests: [not_null]

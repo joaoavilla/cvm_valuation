@@ -66,6 +66,9 @@ MAPEAMENTO = {
     # EXCLUIDO ("BPA","1.01.01","Caixa"): mesmo motivo -- filho do 1.01 nas 27
     # empresas do plano financeiro; e caixa fisico, subconjunto do grupo.
 
+    ("BPA", "1.01.03", "Contas a Receber"): ("contas_a_receber", "PADRAO"),
+    ("BPA", "1.01.04", "Estoques"): ("estoques", "PADRAO"),
+
     ("BPA", "1.02", "Ativo Não Circulante"): ("ativo_nao_circulante", "PADRAO"),
     ("BPA", "1.02", "Ativo Realizável a Longo Prazo"): ("ativo_nao_circulante", "LEGADO"),
     # 1.02 = "Ativos Financeiros" / "Aplicacoes Financeiras" ficam de fora:
@@ -74,6 +77,10 @@ MAPEAMENTO = {
     # --- Passivo -----------------------------------------------------------
     ("BPP", "2", "Passivo Total"): ("passivo_total", "PADRAO"),
     ("BPP", "2.01", "Passivo Circulante"): ("passivo_circulante", "PADRAO"),
+    ("BPP", "2.01.02", "Fornecedores"): ("fornecedores", "PADRAO"),
+    ("BPP", "2.01.04", "Empréstimos e Financiamentos"): ("divida_bruta_circulante", "PADRAO"),
+    ("BPP", "2.02.01", "Empréstimos e Financiamentos"): ("divida_bruta_nao_circulante", "PADRAO"),
+
     ("BPP", "2.02", "Passivo Não Circulante"): ("passivo_nao_circulante", "PADRAO"),
     ("BPP", "2.02", "Passivo Exigível a Longo Prazo"): ("passivo_nao_circulante", "LEGADO"),
 
@@ -83,8 +90,13 @@ MAPEAMENTO = {
     # Custo Amortizado" (32) e "Provisoes" (27) NAO sao PL. E o caso que mais
     # justifica ter a descricao na chave.
     ("BPP", "2.08", "Patrimônio Líquido Consolidado"): ("patrimonio_liquido", "FINANCEIRO"),
+    ("BPP", "2.03.09", "Participação dos Acionistas Não Controladores"): ("pl_minoritarios", "PADRAO"),
+    ("BPP", "2.08.09", "Participação dos Acionistas Não Controladores"): ("pl_minoritarios", "FINANCEIRO"),
+    ("BPP", "2.03.09", "Participação dos Acionistas Não Controladores"): ("pl_minoritarios", "PADRAO"),
 
     # --- Resultado ---------------------------------------------------------
+    ("DRE", "3.11.01", "Atribuído a Sócios da Empresa Controladora"): ("lucro_liquido_controladores", "PADRAO"),
+
     ("DRE", "3.01", "Receita de Venda de Bens e/ou Serviços"): ("receita_liquida", "PADRAO"),
     ("DRE", "3.01", "Receita Bruta de Venda de Bens e/ou Serviços"): ("receita_liquida", "PADRAO"),
     ("DRE", "3.01", "Receita"): ("receita_liquida", "PADRAO"),
@@ -101,6 +113,9 @@ MAPEAMENTO = {
     ("DRE", "3.03", "Resultado Bruto de Intermediação Financeira"): ("fin_resultado_intermediacao", "FINANCEIRO"),
 
     ("DRE", "3.04", "Despesas/Receitas Operacionais"): ("despesas_operacionais", "PADRAO"),
+    ("DRE", "3.04.01", "Despesas com Vendas"): ("despesas_vendas", "PADRAO"),
+    ("DRE", "3.04.02", "Despesas Gerais e Administrativas"): ("despesas_administrativas", "PADRAO"),
+    ("DRE", "3.04.06", "Resultado de Equivalência Patrimonial"): ("equivalencia_patrimonial", "PADRAO"),
 
     # EBIT: "antes do resultado financeiro E dos tributos". No plano deslocado
     # a mesma frase aparece em 3.07 -- e a descricao que manda, nao o codigo.
@@ -110,6 +125,8 @@ MAPEAMENTO = {
     # operacional, nao equivale a EBIT.
 
     ("DRE", "3.06", "Resultado Financeiro"): ("resultado_financeiro", "PADRAO"),
+    ("DRE", "3.06.01", "Receitas Financeiras"): ("receitas_financeiras", "PADRAO"),
+    ("DRE", "3.06.02", "Despesas Financeiras"): ("despesas_financeiras", "PADRAO"),
 
     ("DRE", "3.07", "Resultado Antes dos Tributos sobre o Lucro"): ("lucro_antes_tributos", "PADRAO"),
     ("DRE", "3.05", "Resultado Antes dos Tributos sobre o Lucro"): ("lucro_antes_tributos", "DESLOCADO"),
@@ -124,6 +141,12 @@ MAPEAMENTO = {
     # lucro liquido. E o exemplo canonico do risco de mapear por codigo.
     ("DRE", "3.13", "Lucro/Prejuízo do Período"): ("lucro_liquido", "FINANCEIRO"),
     ("DRE", "3.13", "Lucro/Prejuízo Consolidado do Período"): ("lucro_liquido", "FINANCEIRO"),
+    ("DRE", "3.09", "Lucro/Prejuízo Consolidado do Período"): ("lucro_liquido", "FINANCEIRO"),
+
+    ("DRE", "3.11.01", "Atribuído a Sócios da Empresa Controladora"): ("lucro_liquido_controladores", "PADRAO"),
+    ("DRE", "3.11.01", "Atribuído aos Sócios da Empresa Controladora"): ("lucro_liquido_controladores", "PADRAO"),
+    ("DRE", "3.09.01", "Atribuído a Sócios da Empresa Controladora"): ("lucro_liquido_controladores", "FINANCEIRO"),
+    ("DRE", "3.13.01", "Atribuído a Sócios da Empresa Controladora"): ("lucro_liquido_controladores", "FINANCEIRO"),
 
     # --- Fluxo de caixa ----------------------------------------------------
     ("DFC_MI", "6.01", "Caixa Líquido Atividades Operacionais"): ("fluxo_caixa_operacional", "PADRAO"),

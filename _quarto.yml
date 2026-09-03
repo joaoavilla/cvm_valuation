@@ -1,0 +1,28 @@
+project:
+  type: website
+  output-dir: docs
+  execute-dir: project
+  render:
+    - index.qmd
+    - empresa.qmd
+
+website:
+  title: "cvm_valuation"
+  description: "Fundamentos das companhias abertas brasileiras, com data de divulgação e histórico de revisão"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Início
+      - href: empresa.qmd
+        text: Empresa
+  page-footer:
+    center: |
+      Contém informações da Comissão de Valores Mobiliários (CVM), obtidas do
+      Portal de Dados Abertos e disponibilizadas sob Open Database License
+      (ODbL) v1.0.
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-fold: true

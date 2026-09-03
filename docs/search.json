@@ -1,0 +1,44 @@
+[
+  {
+    "objectID": "empresa.html",
+    "href": "empresa.html",
+    "title": "Ficha da empresa",
+    "section": "",
+    "text": "Exercício 2025 · base consolidado\n\n\n\nIndicador\nControladores\nConsolidado\nPercentil do mercado\n\n\n\n\nMargem líquida\n15.6%\n16.6%\n77%\n\n\nROE\n36.6%\n36.5%\n89%\n\n\nMargem bruta\n33.5%\n\n\n\n\nMargem EBIT\n19.6%\n\n\n\n\nLiquidez corrente\n1.55\n\n54%\n\n\n\nControladores usa o lucro atribuído aos sócios da controladora e o PL sem a participação de não controladores — a convenção dos sites de fundamentos. Consolidado inclui a parcela dos minoritários. A diferença é o que pertence a terceiros dentro das subsidiárias.\n\n\n✓ Nenhuma linha-síntese deste exercício foi revisada na safra seguinte.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nano_exercicio\ntipo_df\nreceita_liquida\nlucro_liquido_controladores\nmargem_liquida\nroe\nliquidez_corrente\nteve_revisao_material\n\n\n\n\n0\n2010\nCONSOLIDADO\n4.391973e+09\n5.197820e+08\n0.118348\n0.150461\n2.472664\nFalse\n\n\n1\n2011\nCONSOLIDADO\n5.189409e+09\n5.869360e+08\n0.113103\n0.154452\n2.131183\nFalse\n\n\n2\n2012\nCONSOLIDADO\n6.173878e+09\n6.559790e+08\n0.106251\n0.161557\n1.895237\nFalse\n\n\n3\n2013\nCONSOLIDADO\n6.828896e+09\n8.434670e+08\n0.123514\n0.185061\n2.657742\nFalse\n\n\n4\n2014\nCONSOLIDADO\n7.840757e+09\n9.547260e+08\n0.121765\n0.188816\n2.395336\nFalse\n\n\n5\n2015\nCONSOLIDADO\n9.760323e+09\n1.156065e+09\n0.118445\n0.191739\n2.743850\nFalse\n\n\n6\n2016\nCONSOLIDADO\n9.367008e+09\n1.117624e+09\n0.119315\n0.187430\n2.783741\nFalse\n\n\n7\n2017\nCONSOLIDADO\n9.523830e+09\n1.142149e+09\n0.119925\n0.169939\n2.176133\nFalse\n\n\n8\n2018\nCONSOLIDADO\n1.197009e+10\n1.338319e+09\n0.111805\n0.173486\n1.874965\nFalse\n\n\n9\n2019\nCONSOLIDADO\n1.334743e+10\n1.614581e+09\n0.120966\n0.185217\n2.173426\nFalse\n\n\n10\n2020\nCONSOLIDADO\n1.746956e+10\n2.340873e+09\n0.133997\n0.202442\n2.134656\nFalse\n\n\n11\n2021\nCONSOLIDADO\n2.356334e+10\n3.585947e+09\n0.152183\n0.263576\n2.011375\nFalse\n\n\n12\n2022\nCONSOLIDADO\n2.990472e+10\n4.208084e+09\n0.140716\n0.283663\n1.914981\nFalse\n\n\n13\n2023\nCONSOLIDADO\n3.250360e+10\n5.731670e+09\n0.176340\n0.330506\n1.921828\nFalse\n\n\n14\n2024\nCONSOLIDADO\n3.798694e+10\n6.042593e+09\n0.159070\n0.272137\n1.761414\nFalse\n\n\n15\n2025\nCONSOLIDADO\n4.080411e+10\n6.376219e+09\n0.156264\n0.366088\n1.547810\nFalse"
+  },
+  {
+    "objectID": "empresa.html#série-completa",
+    "href": "empresa.html#série-completa",
+    "title": "Ficha da empresa",
+    "section": "",
+    "text": "ano_exercicio\ntipo_df\nreceita_liquida\nlucro_liquido_controladores\nmargem_liquida\nroe\nliquidez_corrente\nteve_revisao_material\n\n\n\n\n0\n2010\nCONSOLIDADO\n4.391973e+09\n5.197820e+08\n0.118348\n0.150461\n2.472664\nFalse\n\n\n1\n2011\nCONSOLIDADO\n5.189409e+09\n5.869360e+08\n0.113103\n0.154452\n2.131183\nFalse\n\n\n2\n2012\nCONSOLIDADO\n6.173878e+09\n6.559790e+08\n0.106251\n0.161557\n1.895237\nFalse\n\n\n3\n2013\nCONSOLIDADO\n6.828896e+09\n8.434670e+08\n0.123514\n0.185061\n2.657742\nFalse\n\n\n4\n2014\nCONSOLIDADO\n7.840757e+09\n9.547260e+08\n0.121765\n0.188816\n2.395336\nFalse\n\n\n5\n2015\nCONSOLIDADO\n9.760323e+09\n1.156065e+09\n0.118445\n0.191739\n2.743850\nFalse\n\n\n6\n2016\nCONSOLIDADO\n9.367008e+09\n1.117624e+09\n0.119315\n0.187430\n2.783741\nFalse\n\n\n7\n2017\nCONSOLIDADO\n9.523830e+09\n1.142149e+09\n0.119925\n0.169939\n2.176133\nFalse\n\n\n8\n2018\nCONSOLIDADO\n1.197009e+10\n1.338319e+09\n0.111805\n0.173486\n1.874965\nFalse\n\n\n9\n2019\nCONSOLIDADO\n1.334743e+10\n1.614581e+09\n0.120966\n0.185217\n2.173426\nFalse\n\n\n10\n2020\nCONSOLIDADO\n1.746956e+10\n2.340873e+09\n0.133997\n0.202442\n2.134656\nFalse\n\n\n11\n2021\nCONSOLIDADO\n2.356334e+10\n3.585947e+09\n0.152183\n0.263576\n2.011375\nFalse\n\n\n12\n2022\nCONSOLIDADO\n2.990472e+10\n4.208084e+09\n0.140716\n0.283663\n1.914981\nFalse\n\n\n13\n2023\nCONSOLIDADO\n3.250360e+10\n5.731670e+09\n0.176340\n0.330506\n1.921828\nFalse\n\n\n14\n2024\nCONSOLIDADO\n3.798694e+10\n6.042593e+09\n0.159070\n0.272137\n1.761414\nFalse\n\n\n15\n2025\nCONSOLIDADO\n4.080411e+10\n6.376219e+09\n0.156264\n0.366088\n1.547810\nFalse"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Fundamentos da B3, com recibo",
+    "section": "",
+    "text": "A CVM republica o mesmo exercício em documentos diferentes, com valores diferentes. Este projeto separa o período a que um valor se refere do documento em que ele foi publicado — e mede o quanto isso importa.\nEm 12.5% das fichas (empresa × exercício), pelo menos uma linha-síntese do balanço ou do resultado mudou na safra seguinte — 1.192 de 9.517."
+  },
+  {
+    "objectID": "index.html#o-problema",
+    "href": "index.html#o-problema",
+    "title": "Fundamentos da B3, com recibo",
+    "section": "",
+    "text": "A CVM republica o mesmo exercício em documentos diferentes, com valores diferentes. Este projeto separa o período a que um valor se refere do documento em que ele foi publicado — e mede o quanto isso importa.\nEm 12.5% das fichas (empresa × exercício), pelo menos uma linha-síntese do balanço ou do resultado mudou na safra seguinte — 1.192 de 9.517."
+  },
+  {
+    "objectID": "index.html#cobertura",
+    "href": "index.html#cobertura",
+    "title": "Fundamentos da B3, com recibo",
+    "section": "Cobertura",
+    "text": "Cobertura\n\n\n\n\n\n\n\n\n\nlinhas\nempresas\nde\nate\n\n\n\n\n0\n10847\n1223\n2010\n2025"
+  },
+  {
+    "objectID": "index.html#as-maiores-revisões-já-medidas",
+    "href": "index.html#as-maiores-revisões-já-medidas",
+    "title": "Fundamentos da B3, com recibo",
+    "section": "As maiores revisões já medidas",
+    "text": "As maiores revisões já medidas\n\n\n\n\n\n\n\n\n\nrazao_social\nano_exercicio\nconta\npublicado_bi\nrevisado_bi\nvariacao_pct\n\n\n\n\n0\nBRF S.A.\n2024\nReceitas Financeiras\n1.23\n7.31\n496.1\n\n\n1\nMAGAZINE LUIZA S.A.\n2023\nVariações nos Ativos e Passivos\n2.56\n15.11\n489.9\n\n\n2\nCIELO S.A. - INSTITUIÇÃO DE PAGAMENTO\n2023\nAquisições de cotas de FIDCs\n-1.67\n6.48\n489.3\n\n\n3\nCIA HIDRO ELÉTRICA DO SÃO FRANCISCO\n2013\nCaixa Líquido Atividades de Investimento\n1.07\n-4.12\n-484.2\n\n\n4\nAMERICANAS S.A. - EM RECUPERAÇÃO JUDICIAL\n2021\nOutros\n2.96\n17.23\n481.9\n\n\n5\nAMERICANAS S.A. - EM RECUPERAÇÃO JUDICIAL\n2021\nOutras Obrigações\n2.97\n17.25\n480.0\n\n\n6\nCOMPANHIA DE LOCAÇÃO DAS AMÉRICAS\n2022\nEm Moeda Nacional\n1.82\n10.27\n465.1\n\n\n7\nLOCALIZA RENT A CAR S.A.\n2020\nOutros\n-1.10\n3.94\n456.5\n\n\n8\nBRF S.A.\n2024\nOutros\n1.39\n7.69\n451.7\n\n\n9\nBCO BTG PACTUAL S.A.\n2022\nVariações nos Ativos e Passivos\n1.34\n7.27\n442.6\n\n\n10\nVALE S.A.\n2015\nOutras Obrigações\n1.86\n9.96\n436.9\n\n\n11\nLOCALIZA RENT A CAR S.A.\n2020\nOutros\n-1.44\n4.67\n423.3"
+  }
+]

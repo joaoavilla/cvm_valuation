@@ -1,0 +1,76 @@
+---
+title: "Fundamentos da B3, com recibo"
+---
+
+```{python}
+#| echo: false
+import duckdb, os
+DB = "warehouse.duckdb"
+con = duckdb.connect(DB, read_only=True)
+```
+
+## O problema
+
+A CVM republica o mesmo exercício em documentos diferentes, com valores
+diferentes. Este projeto separa **o período a que um valor se refere** do
+**documento em que ele foi publicado** — e mede o quanto isso importa.
+
+```{python}
+#| echo: false
+ficha = con.sql("""
+    with s as (
+        select r.cd_cvm, r.dt_fim_exercicio,
+               max(case when abs(r.dif_pct) > 0.01 then 1 else 0 end) as material
+        from int_revisoes_entre_safras r
+        join contas_canonicas c
+          on c.demonstrativo = r.demonstrativo
+         and c.cd_conta      = r.cd_conta
+         and c.ds_conta      = r.ds_conta_original
+        join int_empresas_tipo_df p
+          on p.cd_cvm = r.cd_cvm and p.dt_fim_exercicio = r.dt_fim_exercicio
+         and p.tipo_df_escolhido = r.tipo_df
+        where c.conceito in ('ativo_total','passivo_total','patrimonio_liquido',
+                             'receita_liquida','lucro_liquido')
+        group by 1,2
+    )
+    select count(*) fichas, sum(material) revisadas,
+           round(100.0*sum(material)/count(*),1) pct
+    from s
+""").df()
+f = ficha.iloc[0]
+```
+
+Em **`{python} f"{f.pct}%"`** das fichas (empresa × exercício), pelo menos uma
+linha-síntese do balanço ou do resultado mudou na safra seguinte —
+**`{python} f"{int(f.revisadas):,}".replace(",", ".")`** de
+**`{python} f"{int(f.fichas):,}".replace(",", ".")`**.
+
+## Cobertura
+
+```{python}
+#| echo: false
+con.sql("""
+    select count(*) as linhas,
+           count(distinct cd_cvm) as empresas,
+           min(ano_exercicio) as de, max(ano_exercicio) as ate
+    from mart_empresa_visao
+""").df()
+```
+
+## As maiores revisões já medidas
+
+```{python}
+#| echo: false
+con.sql("""
+    select razao_social, ano_exercicio, ds_conta_original as conta,
+           round(valor_original/1e9, 2) as publicado_bi,
+           round(valor_revisado/1e9, 2) as revisado_bi,
+           round(dif_pct*100, 1) as variacao_pct
+    from int_revisoes_entre_safras
+    where comparavel is true
+      and abs(valor_original) > 1e9
+      and abs(dif_pct) between 0.05 and 5
+    order by abs(dif_pct) desc
+    limit 12
+""").df()
+```
