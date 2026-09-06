@@ -15,7 +15,11 @@ models:
               - dt_fim_exercicio
               - tipo_df
               - cd_conta
+              - ds_conta
               - dt_referencia
+              - versao
+              - ordem_exercicio
+              - dt_inicio_exercicio
 
       # Um fato econômico não pode terminar depois
       # da safra documental em que foi reportado.
