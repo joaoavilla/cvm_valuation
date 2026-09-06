@@ -78,6 +78,38 @@ models:
           config:
             severity: warn
 
+      # Razão sobre patrimônio não positivo não é indicador: o sinal do quociente passa a
+      # depender do sinal do denominador. Antes da correção, 1.145 fichas de 299 empresas
+      # publicavam ROE POSITIVO para empresa com prejuízo, só porque o PL era negativo.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not (roe is not null and patrimonio_liquido_controladores <= 0)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not (roe_consolidado is not null and patrimonio_liquido <= 0)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not (alavancagem is not null and patrimonio_liquido_controladores <= 0)"
+
+      # Margem exatamente zero com lucro diferente de zero é a assinatura do defeito do
+      # bloco de atribuição: a linha 3.x.01 vinha zerada e era lida ao pé da letra.
+      # Eram 390 fichas; a resolução por identidade deixou 1, que fica visível como WARN
+      # em vez de sumir. Se voltar a crescer, a regra de resolução parou de cobrir um caso.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not (margem_liquida = 0 and lucro_liquido <> 0)"
+          config:
+            severity: warn
+
+      # O lucro dos controladores publicado só pode vir de bloco cuja identidade fecha.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: >
+              not (
+                lucro_liquido_controladores is not null
+                and status_lucro_controladores != 'IDENTIDADE_OK'
+              )
+
       - dbt_utils.expression_is_true:
           arguments:
             expression: "divida_bruta >= 0"
@@ -107,8 +139,27 @@ models:
         description: Lucro consolidado do período, incluindo a parcela de não controladores.
       - name: lucro_liquido_controladores
         description: >
-          Lucro atribuído aos sócios da controladora. Nulo quando a empresa não
-          abre a linha, caso em que os indicadores recuam para o consolidado.
+          Lucro atribuído aos sócios da controladora, publicado APENAS quando a identidade
+          do bloco de atribuição fecha (total = controladores + não controladores) e não
+          contradiz o balanço. Nulo nos demais casos, e aí os indicadores recuam para o
+          consolidado, que é auto-consistente. Ver status_lucro_controladores.
+      - name: lucro_liquido_controladores_fonte
+        description: >
+          O que a CVM publicou na linha 3.x.01, sem validação. Preservado para auditoria do
+          defeito: é a coluna que mostra AZUL 2024 com +R$ 9,19 bi contra um prejuízo
+          consolidado de R$ 9,15 bi.
+      - name: status_lucro_controladores
+        description: >
+          IDENTIDADE_OK = a soma fecha e o valor é usado.
+          SEM_SPLIT = a base não abre a linha (individual), recuo para o consolidado.
+          SPLIT_NAO_INFORMADO = a fonte zerou as duas linhas do bloco tendo lucro não nulo.
+          CONFLITO_FONTE = a soma não fecha, há mais de um bloco candidato, ou a DRE
+          atribui tudo aos não controladores enquanto o balanço não registra minoritários.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['IDENTIDADE_OK', 'SEM_SPLIT', 'SPLIT_NAO_INFORMADO', 'CONFLITO_FONTE']
       - name: pl_minoritarios
         description: Participação dos acionistas não controladores dentro do PL.
       - name: patrimonio_liquido_controladores
@@ -122,7 +173,8 @@ models:
       - name: divida_liquida
         description: Dívida bruta menos caixa e equivalentes.
       - name: alavancagem
-        description: Dívida líquida sobre PL dos controladores.
+        description: >
+          Dívida líquida sobre PL dos controladores. Nulo quando o PL não é positivo.
       - name: cobertura_juros
         description: EBIT sobre despesas financeiras em valor absoluto.
       - name: margem_liquida
@@ -130,7 +182,9 @@ models:
       - name: margem_liquida_consolidada
         description: Lucro consolidado sobre receita líquida.
       - name: roe
-        description: Lucro dos controladores sobre PL dos controladores.
+        description: >
+          Lucro dos controladores sobre PL dos controladores. Nulo quando o PL não é
+          positivo: o indicador não existe nesse caso.
       - name: roe_consolidado
         description: Lucro consolidado sobre PL consolidado.
       - name: ativo_total
