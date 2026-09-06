@@ -4,9 +4,12 @@ with original as (
 
     select
         cd_cvm, razao_social, demonstrativo, tipo_df, cd_conta, ds_conta,
-        dt_fim_exercicio, ano_exercicio, dt_referencia, valor, dt_recebimento
+        dt_inicio_exercicio, dt_fim_exercicio, ano_exercicio, dt_referencia, valor, dt_recebimento
     from {{ ref('fct_fundamentos') }}
     where safra_original = true
+      -- Comparar contra um valor que a fonte não soube dizer não é revisão, é ruído.
+      -- Linhas em quarentena (status_valor <> 'OK') ficam fora dos dois lados.
+      and status_valor = 'OK'
 
 ),
 
@@ -14,9 +17,10 @@ revisado as (
 
     select
         cd_cvm, demonstrativo, tipo_df, cd_conta, ds_conta,
-        dt_fim_exercicio, dt_referencia, valor, dt_recebimento
+        dt_inicio_exercicio, dt_fim_exercicio, dt_referencia, valor, dt_recebimento
     from {{ ref('fct_fundamentos') }}
     where safra_original = false
+      and status_valor = 'OK'
 
 ),
 
@@ -39,6 +43,7 @@ comparacao as (
         original.ds_conta as ds_conta_original,
         revisado.ds_conta as ds_conta_revisada,
 
+        original.dt_inicio_exercicio,
         original.dt_fim_exercicio,
         original.ano_exercicio,
 
@@ -71,6 +76,10 @@ comparacao as (
        and  original.demonstrativo    = revisado.demonstrativo
        and  original.cd_conta         = revisado.cd_conta
        and  original.dt_fim_exercicio = revisado.dt_fim_exercicio
+       -- O período, não só a data de fim. Medido: 48 pares (empresa 026239) em que o mesmo
+       -- documento traz dois períodos terminando no mesmo dia com durações diferentes.
+       -- Casar 12 meses contra 9 meses e chamar a diferença de "revisão" é fabricar revisão.
+       and  original.dt_inicio_exercicio is not distinct from revisado.dt_inicio_exercicio
 
     left join conceito as conceito_original
         on  conceito_original.demonstrativo = original.demonstrativo

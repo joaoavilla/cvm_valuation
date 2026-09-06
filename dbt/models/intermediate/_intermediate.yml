@@ -6,15 +6,23 @@ models:
       Empilha os cinco demonstrativos num único grão, preservando período
       econômico, safra documental e tipo de demonstrativo.
     data_tests:
+      # `ds_conta` entra no grão porque `cd_conta` não determina significado. Sem ela, duas
+      # contas de nome diferente sob o mesmo código no mesmo documento colidiam e o staging
+      # descartava uma. `dt_inicio_exercicio` entra porque um mesmo documento chega a trazer
+      # dois períodos com o mesmo fim: medidos 96 casos, antes colapsados em um.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - demonstrativo
               - cd_cvm
               - tipo_df
+              - versao
               - dt_referencia
+              - ordem_exercicio
+              - dt_inicio_exercicio
               - dt_fim_exercicio
               - cd_conta
+              - ds_conta
     columns:
       - name: demonstrativo
         description: Demonstrativo de origem da linha.
@@ -98,6 +106,10 @@ models:
       contábil. Use `where comparavel is not true` para isolar os pares
       suspeitos; `where not mesmo_conceito` pega apenas 68 linhas e engana.
     data_tests:
+      # `ds_conta_original` e `ds_conta_revisada` entram no grão declarado porque o JOIN
+      # continua por código, de propósito (migração de plano precisa aparecer), mas o fato
+      # agora distingue duas contas de nome diferente sob o mesmo código. Sem elas no grão,
+      # o par vira produto cartesiano e o teste de unicidade falha com razão.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -105,6 +117,9 @@ models:
               - tipo_df
               - demonstrativo
               - cd_conta
+              - ds_conta_original
+              - ds_conta_revisada
+              - dt_inicio_exercicio
               - dt_fim_exercicio
               - dt_referencia_revisada
       - dbt_utils.expression_is_true:

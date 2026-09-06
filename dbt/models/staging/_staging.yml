@@ -1,5 +1,12 @@
 version: 2
 
+# Camada de tipagem e normalização. Uma linha aqui é uma linha de demonstrativo da CVM,
+# no grão (cd_cvm, tipo_df, dt_referencia, versao, ordem_exercicio, cd_conta, ds_conta).
+# `ds_conta` está no grão de propósito: `cd_conta` não determina significado.
+#
+# `valor` é NULL quando a fonte se contradiz (dois valores para a mesma chave) ou quando a
+# escala é desconhecida. `status_valor` diz qual dos dois. Ausência declarada, nunca desempate.
+
 models:
 
   - name: stg_cvm__dre
@@ -22,10 +29,47 @@ models:
         data_tests:
           - not_null
 
-      - name: valor
-        description: "Valor contábil normalizado para reais"
+      - name: ds_conta
+        description: >
+          Descrição exata da conta na fonte. Faz parte do grão: é ela que desambigua o código.
+        data_tests:
+          # WARN e não ERROR: a fonte tem exatamente 2 linhas com descrição nula em 8,5 M
+          # (BNDESPAR, dre_ind, 2019, conta 3.06.01.06, valor 0, conta não-fixa). Defeito da
+          # CVM, medido em 2026-09-06. Fica visível sem travar o build; se o número crescer,
+          # a fonte piorou e o grão precisa de outra defesa.
+          - not_null:
+              config:
+                severity: warn
+
+      - name: unidade
+        description: >
+          MOEDA para contas monetárias; POR_ACAO para o grupo 3.99 da DRE, que a CVM publica
+          em reais por ação e ao qual ESCALA_MOEDA não se aplica.
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ['MOEDA', 'POR_ACAO']
+
+      - name: status_valor
+        description: >
+          OK = a fonte traz um único valor para a chave. CONFLITO_FONTE = traz mais de um e
+          nenhuma regra contábil desempata, então o valor fica NULL.
+          ESCALA_DESCONHECIDA = ESCALA_MOEDA fora de {MIL, UNIDADE}.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['OK', 'CONFLITO_FONTE', 'ESCALA_DESCONHECIDA']
+
+      - name: valor
+        description: >
+          Valor em reais para contas MOEDA; em reais por ação para contas POR_ACAO.
+          NULL quando status_valor <> 'OK' — ausência declarada, não zero e não desempate.
+        data_tests:
+          - not_null:
+              config:
+                where: "status_valor = 'OK'"
 
       - name: ordem_exercicio
         description: "Indica se o registro pertence ao exercício atual ou comparativo"
@@ -33,10 +77,9 @@ models:
           - accepted_values:
               arguments:
                 values: ['ÚLTIMO', 'PENÚLTIMO']
-
 
   - name: stg_cvm__bpa
-    description: "Balanço Patrimonial Ativo unificado (consolidado + individual), transformado a partir do raw CVM"
+    description: "Balanço Patrimonial Ativo unificado (consolidado + individual)"
     columns:
       - name: cd_cvm
         description: "Código CVM da empresa"
@@ -55,10 +98,47 @@ models:
         data_tests:
           - not_null
 
-      - name: valor
-        description: "Valor contábil normalizado para reais"
+      - name: ds_conta
+        description: >
+          Descrição exata da conta na fonte. Faz parte do grão: é ela que desambigua o código.
+        data_tests:
+          # WARN e não ERROR: a fonte tem exatamente 2 linhas com descrição nula em 8,5 M
+          # (BNDESPAR, dre_ind, 2019, conta 3.06.01.06, valor 0, conta não-fixa). Defeito da
+          # CVM, medido em 2026-09-06. Fica visível sem travar o build; se o número crescer,
+          # a fonte piorou e o grão precisa de outra defesa.
+          - not_null:
+              config:
+                severity: warn
+
+      - name: unidade
+        description: >
+          MOEDA para contas monetárias; POR_ACAO para o grupo 3.99 da DRE, que a CVM publica
+          em reais por ação e ao qual ESCALA_MOEDA não se aplica.
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ['MOEDA', 'POR_ACAO']
+
+      - name: status_valor
+        description: >
+          OK = a fonte traz um único valor para a chave. CONFLITO_FONTE = traz mais de um e
+          nenhuma regra contábil desempata, então o valor fica NULL.
+          ESCALA_DESCONHECIDA = ESCALA_MOEDA fora de {MIL, UNIDADE}.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['OK', 'CONFLITO_FONTE', 'ESCALA_DESCONHECIDA']
+
+      - name: valor
+        description: >
+          Valor em reais para contas MOEDA; em reais por ação para contas POR_ACAO.
+          NULL quando status_valor <> 'OK' — ausência declarada, não zero e não desempate.
+        data_tests:
+          - not_null:
+              config:
+                where: "status_valor = 'OK'"
 
       - name: ordem_exercicio
         description: "Indica se o registro pertence ao exercício atual ou comparativo"
@@ -66,10 +146,9 @@ models:
           - accepted_values:
               arguments:
                 values: ['ÚLTIMO', 'PENÚLTIMO']
-
 
   - name: stg_cvm__bpp
-    description: "Balanço Patrimonial Passivo unificado (consolidado + individual), transformado a partir do raw CVM"
+    description: "Balanço Patrimonial Passivo unificado (consolidado + individual)"
     columns:
       - name: cd_cvm
         description: "Código CVM da empresa"
@@ -88,10 +167,47 @@ models:
         data_tests:
           - not_null
 
-      - name: valor
-        description: "Valor contábil normalizado para reais"
+      - name: ds_conta
+        description: >
+          Descrição exata da conta na fonte. Faz parte do grão: é ela que desambigua o código.
+        data_tests:
+          # WARN e não ERROR: a fonte tem exatamente 2 linhas com descrição nula em 8,5 M
+          # (BNDESPAR, dre_ind, 2019, conta 3.06.01.06, valor 0, conta não-fixa). Defeito da
+          # CVM, medido em 2026-09-06. Fica visível sem travar o build; se o número crescer,
+          # a fonte piorou e o grão precisa de outra defesa.
+          - not_null:
+              config:
+                severity: warn
+
+      - name: unidade
+        description: >
+          MOEDA para contas monetárias; POR_ACAO para o grupo 3.99 da DRE, que a CVM publica
+          em reais por ação e ao qual ESCALA_MOEDA não se aplica.
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ['MOEDA', 'POR_ACAO']
+
+      - name: status_valor
+        description: >
+          OK = a fonte traz um único valor para a chave. CONFLITO_FONTE = traz mais de um e
+          nenhuma regra contábil desempata, então o valor fica NULL.
+          ESCALA_DESCONHECIDA = ESCALA_MOEDA fora de {MIL, UNIDADE}.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['OK', 'CONFLITO_FONTE', 'ESCALA_DESCONHECIDA']
+
+      - name: valor
+        description: >
+          Valor em reais para contas MOEDA; em reais por ação para contas POR_ACAO.
+          NULL quando status_valor <> 'OK' — ausência declarada, não zero e não desempate.
+        data_tests:
+          - not_null:
+              config:
+                where: "status_valor = 'OK'"
 
       - name: ordem_exercicio
         description: "Indica se o registro pertence ao exercício atual ou comparativo"
@@ -99,10 +215,9 @@ models:
           - accepted_values:
               arguments:
                 values: ['ÚLTIMO', 'PENÚLTIMO']
-
 
   - name: stg_cvm__dfc_mi
-    description: "DFC pelo método indireto unificada (consolidada + individual), transformada a partir do raw CVM"
+    description: "DFC pelo método indireto unificada (consolidada + individual)"
     columns:
       - name: cd_cvm
         description: "Código CVM da empresa"
@@ -121,10 +236,47 @@ models:
         data_tests:
           - not_null
 
-      - name: valor
-        description: "Valor contábil normalizado para reais"
+      - name: ds_conta
+        description: >
+          Descrição exata da conta na fonte. Faz parte do grão: é ela que desambigua o código.
+        data_tests:
+          # WARN e não ERROR: a fonte tem exatamente 2 linhas com descrição nula em 8,5 M
+          # (BNDESPAR, dre_ind, 2019, conta 3.06.01.06, valor 0, conta não-fixa). Defeito da
+          # CVM, medido em 2026-09-06. Fica visível sem travar o build; se o número crescer,
+          # a fonte piorou e o grão precisa de outra defesa.
+          - not_null:
+              config:
+                severity: warn
+
+      - name: unidade
+        description: >
+          MOEDA para contas monetárias; POR_ACAO para o grupo 3.99 da DRE, que a CVM publica
+          em reais por ação e ao qual ESCALA_MOEDA não se aplica.
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ['MOEDA', 'POR_ACAO']
+
+      - name: status_valor
+        description: >
+          OK = a fonte traz um único valor para a chave. CONFLITO_FONTE = traz mais de um e
+          nenhuma regra contábil desempata, então o valor fica NULL.
+          ESCALA_DESCONHECIDA = ESCALA_MOEDA fora de {MIL, UNIDADE}.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['OK', 'CONFLITO_FONTE', 'ESCALA_DESCONHECIDA']
+
+      - name: valor
+        description: >
+          Valor em reais para contas MOEDA; em reais por ação para contas POR_ACAO.
+          NULL quando status_valor <> 'OK' — ausência declarada, não zero e não desempate.
+        data_tests:
+          - not_null:
+              config:
+                where: "status_valor = 'OK'"
 
       - name: ordem_exercicio
         description: "Indica se o registro pertence ao exercício atual ou comparativo"
@@ -133,9 +285,8 @@ models:
               arguments:
                 values: ['ÚLTIMO', 'PENÚLTIMO']
 
-
   - name: stg_cvm__dfc_md
-    description: "DFC pelo método direto unificada (consolidada + individual), transformada a partir do raw CVM"
+    description: "DFC pelo método direto unificada (consolidada + individual)"
     columns:
       - name: cd_cvm
         description: "Código CVM da empresa"
@@ -154,10 +305,47 @@ models:
         data_tests:
           - not_null
 
-      - name: valor
-        description: "Valor contábil normalizado para reais"
+      - name: ds_conta
+        description: >
+          Descrição exata da conta na fonte. Faz parte do grão: é ela que desambigua o código.
+        data_tests:
+          # WARN e não ERROR: a fonte tem exatamente 2 linhas com descrição nula em 8,5 M
+          # (BNDESPAR, dre_ind, 2019, conta 3.06.01.06, valor 0, conta não-fixa). Defeito da
+          # CVM, medido em 2026-09-06. Fica visível sem travar o build; se o número crescer,
+          # a fonte piorou e o grão precisa de outra defesa.
+          - not_null:
+              config:
+                severity: warn
+
+      - name: unidade
+        description: >
+          MOEDA para contas monetárias; POR_ACAO para o grupo 3.99 da DRE, que a CVM publica
+          em reais por ação e ao qual ESCALA_MOEDA não se aplica.
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ['MOEDA', 'POR_ACAO']
+
+      - name: status_valor
+        description: >
+          OK = a fonte traz um único valor para a chave. CONFLITO_FONTE = traz mais de um e
+          nenhuma regra contábil desempata, então o valor fica NULL.
+          ESCALA_DESCONHECIDA = ESCALA_MOEDA fora de {MIL, UNIDADE}.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['OK', 'CONFLITO_FONTE', 'ESCALA_DESCONHECIDA']
+
+      - name: valor
+        description: >
+          Valor em reais para contas MOEDA; em reais por ação para contas POR_ACAO.
+          NULL quando status_valor <> 'OK' — ausência declarada, não zero e não desempate.
+        data_tests:
+          - not_null:
+              config:
+                where: "status_valor = 'OK'"
 
       - name: ordem_exercicio
         description: "Indica se o registro pertence ao exercício atual ou comparativo"
