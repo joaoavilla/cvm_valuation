@@ -124,7 +124,41 @@ pivotado as (
         max(case when conceito = 'lucro_liquido'               then valor end) as lucro_liquido,
         max(case when conceito = 'lucro_liquido_controladores' then valor end) as lucro_liquido_controladores,
 
-        max(case when conceito = 'fluxo_caixa_operacional'     then valor end) as fluxo_caixa_operacional
+        max(case when conceito = 'fluxo_caixa_operacional'     then valor end) as fluxo_caixa_operacional,
+
+        -- ---------------------------------------------------------------------------
+        -- Bloco de instituição financeira e seguradora. O seed mapeia estes quatro
+        -- conceitos desde sempre, mas o pivot nunca os projetava: eles só alimentavam
+        -- `flag_financeira`. O resultado era que as 620 fichas de financeira saíam com
+        -- 0,0% de cobertura de receita enquanto o dado estava intacto no fato.
+        --
+        -- São projeções FIÉIS da conta que a CVM publica, com nome próprio. Elas
+        -- deliberadamente NÃO alimentam `receita_liquida`, nem margens, nem `giro_ativo`:
+        --
+        --   (a) A conta certa ainda não foi decidida por medição. Conferido em
+        --       2026-09-07 contra seis âncoras externas, o `3.01` reproduz UMA
+        --       (Banco PAN 2023). Itaú 2024 traz 3.01 = R$ 335,3 bi contra R$ 168,05 bi
+        --       da fonte; Banco do Brasil bate no `3.03`, não no `3.01`; ABC Brasil só
+        --       bate na base INDIVIDUAL, que a política de base proíbe. As âncoras usam
+        --       pelo menos três definições diferentes de "receita de banco".
+        --   (b) A definição não é comparável em corte transversal: o giro do ativo
+        --       mediano seria 0,12 na coorte financeira contra 0,39 na não-financeira,
+        --       diferença puramente definicional.
+        --   (c) O invariante `not (flag_financeira and margem_liquida is not null)`
+        --       (AGENTS.md §4) reprovaria 584 fichas.
+        --
+        -- Publicar um número de receita para banco exige antes uma rodada de
+        -- `validar-externo` que decida 3.01 contra 3.03 com fonte e data declaradas.
+        --
+        -- Atenção ao sinal de `fin_despesa_intermediacao`: vem negativa em 552 de 614
+        -- linhas e POSITIVA em 7 (BANCO MODAL 2020, CCB BRASIL 2015/16/18/19/20,
+        -- BANCO BERJ 2011). A identidade que fecha é `3.01 + 3.02 = 3.03` (611 de 613);
+        -- a subtração fecha em apenas 53. Some, não subtraia.
+        -- ---------------------------------------------------------------------------
+        max(case when conceito = 'fin_receita_intermediacao'   then valor end) as fin_receita_intermediacao,
+        max(case when conceito = 'fin_despesa_intermediacao'   then valor end) as fin_despesa_intermediacao,
+        max(case when conceito = 'fin_resultado_intermediacao' then valor end) as fin_resultado_intermediacao,
+        max(case when conceito = 'fin_receita_seguros'         then valor end) as fin_receita_seguros
 
     from selecionado
 
