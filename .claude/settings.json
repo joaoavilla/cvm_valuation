@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git branch:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(du:*)",
+      "Bash(find:*)",
+      "Bash(.venv/Scripts/python.exe -m pytest:*)",
+      "Bash(.venv/Scripts/dbt.exe parse:*)",
+      "Bash(.venv/Scripts/dbt.exe compile:*)",
+      "Bash(.venv/Scripts/dbt.exe test:*)",
+      "Bash(.venv/Scripts/dbt.exe build:*)",
+      "Bash(.venv/Scripts/dbt.exe docs generate:*)",
+      "Bash(.venv/Scripts/pip.exe list:*)"
+    ]
+  }
+}
