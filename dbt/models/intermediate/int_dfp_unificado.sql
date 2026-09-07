@@ -36,6 +36,7 @@ select
     ds_conta,
     conta_fixa,
     unidade,
+    escala_moeda,
     n_valores_distintos,
     status_valor,
     valor

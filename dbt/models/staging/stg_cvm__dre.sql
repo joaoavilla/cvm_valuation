@@ -58,6 +58,7 @@ transformado as (
         DS_CONTA                           as ds_conta,
         ST_CONTA_FIXA = 'S'                as conta_fixa,
         {{ unidade_da_conta('DRE', 'CD_CONTA') }}                        as unidade,
+        ESCALA_MOEDA                       as escala_moeda,
         {{ valor_em_reais('DRE', 'CD_CONTA', 'ESCALA_MOEDA', 'VL_CONTA') }} as valor
     from unificado
 ),
@@ -77,6 +78,15 @@ resolvido as (
         ds_conta,
         conta_fixa,
         unidade,
+
+        -- `escala_moeda` sobe ao fato para tornar AUDITÁVEL a contradição de etiqueta
+        -- entre safras: a mesma conta e período reportados em dois documentos com
+        -- `ESCALA_MOEDA` diferente e `VL_CONTA` idêntico. Sem esta coluna o defeito não é
+        -- escrevível fora do raw. `max()` aqui lê uma constante, não escolhe entre
+        -- alternativas: a escala é atributo do documento e é uniforme dentro dele
+        -- (medido: 10.847 de 10.847 documentos com uma única escala), e o grão é mais
+        -- fino que o documento.
+        max(escala_moeda)                                       as escala_moeda,
 
         count(*)                                                as n_linhas_fonte,
         count(distinct valor)                                   as n_valores_distintos,
