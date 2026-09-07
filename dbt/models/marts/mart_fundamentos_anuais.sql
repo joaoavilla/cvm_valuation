@@ -136,14 +136,16 @@ pivotado as (
 -- É isso que impede tomar `3.09` (que no plano padrão é "Resultado Líquido das Operações
 -- Continuadas", não o lucro do período) como se fosse o total. Se mais de um bloco casar,
 -- `n_blocos` fica > 1 e a ficha cai em CONFLITO_FONTE em vez de ser desempatada.
-atribuicao as (
+candidatos as (
 
     select
         p.cd_cvm,
         p.dt_fim_exercicio,
-        count(*)            as n_blocos,
-        min(b.contr_bloco)  as contr_bloco,
-        min(b.minor_bloco)  as minor_bloco
+        b.contr_bloco,
+        b.minor_bloco,
+
+        abs(b.contr_bloco + coalesce(b.minor_bloco, 0) - p.lucro_liquido)
+              <= greatest(1000, abs(p.lucro_liquido) * 0.001)  as fecha_identidade
 
     from pivotado as p
 
@@ -154,6 +156,52 @@ atribuicao as (
         and b.contr_bloco is not null
         and abs(b.total_bloco - p.lucro_liquido)
               <= greatest(1000, abs(p.lucro_liquido) * 0.001)
+
+),
+
+-- Dois blocos podem ter o mesmo total sem medirem a mesma coisa. BANRISUL 2024 declara
+-- `3.09` "Lucro antes das Participações e Contribuições Estatutárias" = R$ 727,798 mi com
+-- `.01` e `.02` zerados, e `3.11` "Lucro Líquido Consolidado" = os mesmos R$ 727,798 mi com
+-- `.01` = R$ 727,253 mi e `.02` = R$ 545 mil. Os dois casavam com o lucro do seed, a ficha
+-- caía em CONFLITO_FONTE e um valor correto — conferido contra fonte externa, R$ 727,250 mi —
+-- era suprimido.
+--
+-- O desempate não é arbitrário e não é uma lista de exceções: fica o bloco cuja identidade
+-- contábil FECHA. Quando nenhum fecha, ou quando mais de um fecha, todos permanecem e a
+-- ficha continua em CONFLITO_FONTE — a ambiguidade real segue sendo recusada.
+--
+-- Medido em 2026-09-07, no grão (cd_cvm, dt_fim_exercicio):
+--   2 blocos, 1 fecha     8 fichas / 3 empresas   -> recuperadas (BANRISUL 2020/22/23/24,
+--                                                    BCO ALFA 2023, FINANCEIRA ALFA 2021/22/23)
+--   2 blocos, 2 fecham    5 fichas / 5 empresas   -> seguem em CONFLITO_FONTE
+--   1 bloco               6.304 fichas            -> inalteradas
+preferidos as (
+
+    select cd_cvm, dt_fim_exercicio, contr_bloco, minor_bloco
+
+    from (
+        select
+            *,
+            count(*) filter (fecha_identidade)
+                over (partition by cd_cvm, dt_fim_exercicio)  as n_fecham
+        from candidatos
+    )
+
+    where n_fecham <> 1
+       or fecha_identidade
+
+),
+
+atribuicao as (
+
+    select
+        cd_cvm,
+        dt_fim_exercicio,
+        count(*)            as n_blocos,
+        min(contr_bloco)    as contr_bloco,
+        min(minor_bloco)    as minor_bloco
+
+    from preferidos
 
     group by 1, 2
 
