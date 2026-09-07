@@ -68,6 +68,16 @@ models:
           arguments:
             expression: "not (flag_financeira and margem_liquida is not null)"
 
+      # As colunas `fin_*` são projeções fiéis da conta da CVM e não podem virar
+      # `receita_liquida` por acidente: as duas definições não são a mesma coisa e
+      # a conta certa para receita de banco ainda não foi decidida por medição
+      # (ver o comentário do bloco financeiro em mart_fundamentos_anuais.sql).
+      # Hoje o invariante vale; este teste impede que uma expansão futura do seed
+      # o quebre em silêncio.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not (flag_financeira and receita_liquida is not null)"
+
       - dbt_utils.expression_is_true:
           arguments:
             expression: "ano_exercicio = year(dt_fim_exercicio)"
