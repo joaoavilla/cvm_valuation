@@ -111,6 +111,18 @@ models:
           config:
             severity: warn
 
+      # R-IND-001: em base consolidada, margem e ROE só existem com o lucro dos controladores
+      # validado. Este teste é o que impede o `coalesce` de voltar: se alguém reintroduzir o
+      # fallback, 474 margens e 451 ROEs reaparecem em base consolidada e o build reprova.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: >
+              not (
+                tipo_df = 'CONSOLIDADO'
+                and lucro_liquido_controladores is null
+                and (margem_liquida is not null or roe is not null)
+              )
+
       # O lucro dos controladores publicado só pode vir de bloco cuja identidade fecha.
       - dbt_utils.expression_is_true:
           arguments:
@@ -204,13 +216,23 @@ models:
       - name: cobertura_juros
         description: EBIT sobre despesas financeiras em valor absoluto.
       - name: margem_liquida
-        description: Lucro dos controladores sobre receita líquida.
+        description: >
+          R-IND-001. Resultado atribuível aos sócios da ENTIDADE QUE REPORTA sobre a receita
+          líquida do mesmo período e da mesma base. Uma definição só, realizada em dois
+          contextos: em base CONSOLIDADO exige `lucro_liquido_controladores` validado
+          (`IDENTIDADE_OK`); em base INDIVIDUAL é o próprio `lucro_liquido`, porque
+          demonstração individual não tem participação de não controladores — medido, das
+          4.529 fichas individuais nenhuma tem `pl_minoritarios`, e as 3.911 linhas de "não
+          controladores" do BPP estão todas em base consolidada. Nula quando o componente
+          contratado falta. Quem quer o consolidado usa `margem_liquida_consolidada`.
       - name: margem_liquida_consolidada
         description: Lucro consolidado sobre receita líquida.
       - name: roe
         description: >
-          Lucro dos controladores sobre PL dos controladores. Nulo quando o PL não é
-          positivo: o indicador não existe nesse caso.
+          R-IND-003. Mesmo numerador de `margem_liquida` (R-IND-001), sobre
+          `patrimonio_liquido_controladores`. Nulo quando o numerador contratado falta ou
+          quando o patrimônio não é positivo: razão sobre patrimônio negativo inverte a
+          leitura, e o indicador não existe nesse caso.
       - name: roe_consolidado
         description: Lucro consolidado sobre PL consolidado.
       - name: ativo_total
