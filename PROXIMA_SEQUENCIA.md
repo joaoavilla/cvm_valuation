@@ -5,7 +5,7 @@ depois da **segunda revisão externa**. Complementa `AUDITORIA_ACURACIA_CHECKPOI
 guarda o histórico; aqui ficam **as decisões pendentes e a ordem de execução**.
 
 Regra de leitura: `[MEDIDO]` tem consulta e número · `[ACEITO]` crítica externa confirmada ·
-`[REFUTADO]` crítica externa derrubada por medição · `[DECISÃO]` depende do mantenedor.
+`[DELIMITADO]` crítica externa cujo alcance foi medido, sem virar refutação · `[DECISÃO]` depende do mantenedor.
 
 ---
 
@@ -18,17 +18,17 @@ Toda crítica foi remedida antes de aceita. O resultado se divide em três.
 | # | Crítica | Medição | Situação |
 |---|---|---|---|
 | A1 | O fallback muda a definição de `margem_liquida` e `roe` conforme a disponibilidade do dado | **3.544 de 10.847 fichas** têm `lucro_liquido_controladores` nulo e `margem_liquida` preenchida, inclusive as 10 de `CONTRADICAO_DRE_BPP` | **[ACEITO]** defeito real |
-| A2 | `base_degenerada` usa `coalesce(...,0)=0` e junta ausência com zero | Nas 7 fichas os três conceitos estão **presentes e zero**; **0 NULL** | **[ACEITO]** latente, alcance 0 hoje |
+| A2 | `base_degenerada` usa `coalesce(...,0)=0` e junta ausência com zero (corrigido; ver limitação em §1.4) | Nas 7 fichas os três conceitos estão **presentes e zero**; **0 NULL** | **[ACEITO]** latente, alcance 0 hoje |
 | A3 | A trava da cisão da Alfa não é confirmação externa | A `observacao` já admite que a cisão veio do DFP, mas `fonte_tipo` diz `relatorio_anual` | **[ACEITO]** rótulo errado |
 | A4 | "Tolerância relativa, nunca absoluta" é regra cega | "R$ 23,0 milhões" define o intervalo [22,95; 23,05] mi, não uma tolerância de 0,5% | **[ACEITO]** |
 | A5 | Contrato antes de generalizar | — | **[ACEITO]** inverte a ordem que eu havia proposto |
 
-### 1.2 Refutado com número
+### 1.2 Delimitado com número (correcao de 2026-09-08: NAO sao refutações)
 
 **R1 — "Resultado final zero com outro bloco diferente de zero não prova contradição:
 componentes positivos e negativos podem se compensar."**
 
-Logicamente válido; **não ocorre**. `[MEDIDO]`
+Logicamente válido. **Não observado no recorte medido** — ver a ressalva abaixo. `[MEDIDO]`
 
 ```sql
 with b as (
@@ -51,6 +51,16 @@ dispara em **2** — nas outras **117** o seed elege `3.13`, que carrega o valor
 (BCO NORDESTE, DIBENS LEASING, SANTANDER LEASING, BTG 2010…). A guarda não é cega: ela só
 engata quando o total eleito é ele próprio zero.
 
+> **Correcao de registro.** Eu havia escrito "refutado". Está errado, e a segunda revisão
+> tem razão: isto é **contraexemplo não observado neste recorte**, não hipótese refutada.
+> Não achar compensação nas fichas medidas não transforma a guarda em regra contábil
+> universal. Duas limitações do recorte, declaradas: a consulta agrega com `max()` por
+> `(cd_cvm, dt_fim_exercicio)` e portanto **não preserva contexto documental nem de
+> período**; e ela varre só a base eleita pela política, não as duas. **Pendência aberta:**
+> refazer preservando `(tipo_df, dt_referencia, versao, ordem_exercicio,
+> dt_inicio_exercicio)` e criar um **teste sintético de compensação legítima**, que
+> exercite o caso sem depender de a fonte um dia produzi-lo.
+
 **R2 — "O consolidado zerado no fato não permite concluir que a companhia não tinha
 consolidado válido."**
 
@@ -68,15 +78,67 @@ where CD_CVM='024929' and DT_REFER='2024-12-31'
 | PENÚLTIMO (2023) | 23.833.893 | 2.837.422 | 0 | 2.837.422 |
 | **ÚLTIMO (2024)** | **0** | **0** | **0** | **0** |
 
-O zero **já está no arquivo estruturado da CVM**, com o comparativo do ano anterior
-preenchido no mesmo arquivo. Não é defeito de ingestão nem de transformação. Isso não
-contradiz o revisor — **localiza a causa** na terceira linha da tabela dele: *arquivo
-estruturado defeituoso, com documento publicado correto disponível*. O tratamento indicado
-passa a ser recuperação rastreável a partir do documento, não troca de base por política.
+O zero **já está no Parquet**, com o comparativo do ano anterior preenchido no mesmo
+arquivo.
+
+> **Correcao de registro.** Isto ainda não inocenta a ingestão: **o Parquet é produzido
+> por ela**. Falta comparar com o CSV de dentro do ZIP original, identificando versão e
+> hash. Os ZIPs **estão preservados** em `data/raw/dfp/_zips/` com manifesto em
+> `data/raw/dfp/_manifests/`, então a comparação é possível e virou a Etapa 3.1.
+
+Isso não contradiz o revisor — **localiza a causa** na terceira linha da tabela dele:
+*arquivo estruturado defeituoso, com documento publicado correto disponível*. O tratamento
+indicado passa a ser recuperação rastreável a partir do documento, não troca de base por
+política.
 
 ### 1.3 Impreciso
 
 - A branch tem **10 commits** desde a reescrita desta sessão, não nove.
+
+### 1.4 O que mudou depois da segunda revisão `[MEDIDO 2026-09-08]`
+
+**A pendência externa da Alfa está fechada, e revelou dois defeitos novos.**
+
+A evidência estava no documento que eu já tinha e não havia lido até o fim: *Proposta da
+Administração*, **página 17 de 70**, tabela "Consolidado IFRS — R$ mil".
+
+| | 2023 | 2022 | 2021 |
+|---|---:|---:|---:|
+| Resultado líquido dos exercícios | 23.044 | **38.967** | **79.326** |
+| Parcela dos acionistas controladores | 18.578 | **38.643** | **77.245** |
+| Parcela dos não controladores | 4.466 | 324 | 2.081 |
+
+Confere com o DFP nos três anos: `3.09.01` e `3.09.02` trazem exatamente esses valores. Mas
+em **2021 e 2022 o pai `3.09` vem VAZIO** no arquivo da CVM, e o mart publica
+`lucro_liquido = 0` e `roe = 0` para uma empresa que lucrou R$ 79,3 mi e R$ 39,0 mi.
+
+Isso separa **duas classes de recuperação**, que exigem tratamentos diferentes:
+
+| Classe | Onde está o valor | Recuperação |
+|---|---|---|
+| **Pai em branco** (Alfa 2021/2022) | dentro do próprio arquivo da CVM, nos filhos completos | derivação auditável: `total = controladores + não controladores`, com os dois elegíveis |
+| **Base inteira zerada** (TIM 2024/2025) | **não está** no bloco consolidado | exige documento externo ou a outra base, que é outro contexto contábil |
+
+A primeira é uma derivação dentro do mesmo contexto e cabe no resolvedor. A segunda é
+recuperação documental e precisa entrar como dado de fonte, com documento, página, período,
+base, unidade, data de publicação, data de coleta e data de incorporação.
+
+**Alcance de margem e ROE são diferentes, e não devem ser confundidos** `[MEDIDO]`:
+
+```sql
+select count(*) as fichas,
+       count(*) filter (where lucro_liquido_controladores is null and margem_liquida is not null) as margem_fallback,
+       count(*) filter (where lucro_liquido_controladores is null and roe is not null)            as roe_fallback
+from mart_fundamentos_anuais;
+```
+
+10.847 fichas · **3.544** com margem por fallback · **4.254** com ROE por fallback.
+
+**Limitação declarada de `base_degenerada`:** a regra agora exige ao menos um conceito central
+observado e todos os observados iguais a zero, mas isso **não prova que a base inteira seja
+inválida** — prova que os conceitos que o seed cobre estão zerados. É um **detector parcial**,
+e o estado que ele produz deve ser lido como suspeita dirigida à investigação, não como
+conclusão.
 
 ---
 
@@ -119,7 +181,18 @@ declarado. Build inalterado, nenhum número publicado muda.
 ### Etapa 1 — Contrato dos indicadores
 Registrar, por indicador: significado, numerador, denominador, base, período, aplicabilidade,
 comportamento diante de **ausência**, de **zero reportado** e de **conflito**, e o tipo de
-fonte que o sustenta. Escopo mínimo: `lucro_liquido`, `lucro_liquido_controladores`,
+fonte que o sustenta.
+
+**Entram na Etapa 1, e não na 6** (correção pedida pela segunda revisão — deixá-las para
+o fim obrigaria a refazer a resolução):
+- **Temporalidade**: qual série cada coluna representa — valor reapresentado ou valor
+  conhecido na data. O projeto já tem `safra_original`; falta o contrato dizer a qual
+  série cada coluna pertence, e uma recuperação documental feita hoje **não pode
+  aparecer como se já fosse conhecida no passado**.
+- **Grão documental**: documento, versão, base e período inicial e final fazem parte do
+  contexto de todo valor publicado.
+- **Matriz inicial** indicador → componentes → fontes → validação, ainda que a
+  implementação seja gradual. Escopo mínimo: `lucro_liquido`, `lucro_liquido_controladores`,
 `patrimonio_liquido`, `patrimonio_liquido_controladores`, `margem_liquida`, `roe`.
 
 Cada regra ganha **identificador** (`R-LUC-001`) usado no código, no teste e no registro da

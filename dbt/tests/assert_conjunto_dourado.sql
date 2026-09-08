@@ -9,7 +9,7 @@
 --
 --   TRAVA (189 fichas)             o mart tem de bater com a fonte dentro da tolerância.
 --                                  É a trava de regressão das correções já feitas.
---   DEFEITO_ABERTO (27)            divergência confirmada e ainda não corrigida. Fica
+--   DEFEITO_ABERTO (31)            divergência confirmada e ainda não corrigida. Fica
 --                                  registrada com a causa medida, fora da reprovação, para
 --                                  não travar o build por algo que já se sabe.
 --   DIVERGENCIA_FONTE (19)         o mart está certo e a fonte mede outra coisa — norma
