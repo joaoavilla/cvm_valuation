@@ -68,8 +68,30 @@ um documento antigo entra com três datas distintas: **data de publicação** do
 de coleta** e **data de incorporação** ao pipeline. Ele não pode aparecer como se já fosse
 conhecido pelo sistema antes da incorporação.
 
-`[PENDENTE]` A magnitude da diferença entre as duas séries por conceito ainda não foi medida
-com denominador. Sem isso não se decide se as duas precisam existir como colunas distintas.
+**`R-TMP-003` — as duas séries precisam existir.** `[MEDIDO 2026-09-08]` A pendência está
+fechada, e a resposta não é "a diferença é irrelevante":
+
+- **9.517 de 10.847 fichas (87,7%)** existem em mais de uma safra. Destas, **3.663 (38,5%)**
+  têm diferença material em algum conceito mapeado e **1.571 (16,5%)** em conceito central.
+- **Todos os 12 indicadores se mexem.** `margem_liquida_consolidada` muda em **980 de 7.770**
+  fichas comparáveis (12,6%), 387 por mais de 1 pp e **26 trocam de sinal**.
+  `roe_consolidado` muda em 762 de 8.312 (9,2%), 33 trocam de sinal.
+- **O caso que encerra a discussão: AMERICANAS 2021.** O mart publica hoje margem consolidada
+  de **+2,40%** com status `IDENTIDADE_OK`; na safra seguinte a mesma ficha aparece com
+  **−27,70%** — um lucro de R$ 543,795 mi virou prejuízo de R$ 6,237 bi. CSN 2015: +10,54%
+  contra −7,97%. AUREN 2021: +11,88% contra −17,92%.
+- Um backtest que use a série reapresentada como se fosse conhecida na época **está olhando o
+  futuro**. Publicar a série original, como o mart faz, é a escolha certa — e a outra série
+  precisa existir com nome próprio, não substituir esta.
+
+**`R-TMP-004` — `versao` não é um terceiro eixo.** `[MEDIDO]` Das **492.814** chaves da safra
+original, **zero** têm mais de uma versão com valor divergente. São duas leituras por
+exercício, não três.
+
+**`R-TMP-005` — nem toda diferença entre safras é revisão contábil.** `[MEDIDO]` **1.832 de
+23.394** diferenças materiais (7,8%) são fator exatamente 1000 para cima ou para baixo: são
+contradição de etiqueta de **escala**, já instrumentada por `assert_escala_sem_contradicao`.
+Quem medir taxa de revisão sem excluir isso conta artefato como fato.
 
 ---
 
@@ -182,9 +204,38 @@ Resultado consolidado sobre patrimônio líquido total, este último só quando 
 
 ## 5. Matriz indicador → componentes → fontes → validação
 
-`[PENDENTE]` Em construção. A matriz precisa, por indicador: componentes, demonstrativo e conta
-de origem, cobertura medida por coorte, lacuna, e temporalidade aplicável. É ela que decide
-quais ingestões novas o projeto precisa — e não o contrário.
+Primeira versão `[MEDIDO 2026-09-08]`, sobre o warehouse com `R-IND-001` aplicado.
+Denominador sempre **10.847 fichas = 620 financeiras + 10.227 não-financeiras**.
+`n/N muda` = fichas cujo indicador recalculado na safra seguinte difere · `±` = trocas de sinal.
+
+O mart publica **12 razões** e **4 valores derivados**, sobre 26 componentes lidos do seed em 5
+demonstrativos. **Não há nenhum indicador de mercado publicado** — logo não há, hoje, lacuna
+de preço ou de quantidade de ações a reportar. Isso responde à pergunta de quais ingestões o
+projeto precisa: **nenhuma, para o que ele já publica.**
+
+| Indicador | Componentes | Cobertura | Lacuna | Temporalidade |
+|---|---|---|---|---|
+| `margem_liquida` | lucro atribuível (R-IND-001); `receita_liquida` | **8.333 (76,8%)** · fin **0/620** | 620 financeiras sem receita mapeada (decisão 3.01×3.03); 1.377 não-fin com receita = 0 indistinguível de não mapeada; 532 consolidadas sem split resolvido | **980/7.770 (12,6%)**, 387 >1pp, **26 ±** |
+| `margem_liquida_consolidada` | `lucro_liquido`; `receita_liquida` | 8.807 (81,2%) · fin 0/620 | idem, menos a de split | 980/7.770, 387 >1pp, 26 ± |
+| `margem_bruta` | `lucro_bruto`; `receita_liquida` | 8.807 (81,2%) · fin 0/620 | conceito não existe no plano FINANCEIRO/SEGURADORA | 956/7.770, 476 >1pp, 11 ± |
+| `margem_ebit` | `ebit`; `receita_liquida` | 8.806 (81,2%) · fin 0/620 | EBIT nulo em 614/620 financeiras — não é lacuna, é inaplicabilidade | move |
+| `roe` | lucro atribuível; `patrimonio_liquido_controladores` > 0 | **9.002 (83,0%)** | PL não positivo; split não resolvido | move |
+| `roe_consolidado` | `lucro_liquido`; `patrimonio_liquido` > 0 | 9.453 (87,1%) | PL não positivo | 762/8.312 (9,2%), **33 ±** |
+| `cobertura_juros` | `ebit`; `despesas_financeiras` | — | — | 1.145/8.119, **920 >1pp** |
+| `divida_bruta`, `divida_liquida` | `divida_bruta_*`, `caixa_e_equivalentes` | "100%" **falsa** | ver `R-DIV-001` | move |
+
+**`R-DIV-001` — a cobertura de 100% de `divida_bruta` e `divida_liquida` é falsa.** `[MEDIDO]`
+**650 de 10.847 fichas não têm NENHUM dos componentes** e recebem zero pelo `coalesce`;
+**617 delas são financeiras**. É ausência publicada como zero — o oposto do que AGENTS.md §5
+exige, e a mesma classe que esta auditoria já removeu em outros pontos. `[PENDENTE]`
+
+**`R-REV-001` — `teve_revisao_material` subconta em ~24%.** `[MEDIDO]` Marca 1.263/10.847
+(11,6%), mas: cobre só 5 conceitos; usa limiar relativo de 1% e por isso é **cego a 34 pares
+em que o original era zero** (`dif_pct` fica NULL); **não filtra pelo `tipo_df` que o mart
+publica** — 78 fichas são marcadas por revisão ocorrida numa base que o mart nem publica, o
+que contraria `R-CTX-002`; e não exclui o artefato de escala de `R-TMP-005`. O critério
+equivalente restrito à base eleita dá 1.189; com 6 conceitos centrais e limiar absoluto mais
+relativo dá **1.571**. `[PENDENTE]`
 
 ---
 
@@ -192,7 +243,9 @@ quais ingestões novas o projeto precisa — e não o contrário.
 
 | ID | Pendência | Próximo passo |
 |---|---|---|
-| `R-TMP-001` | magnitude da diferença entre série original e reapresentada, por conceito | medir com denominador |
+| `R-TMP-003` | **fechada**: as duas séries divergem em 12,6% dos indicadores, com 26 trocas de sinal (AMERICANAS 2021: +2,40% → −27,70%) | expor a série reapresentada com nome próprio |
+| `R-DIV-001` | 650 fichas publicam dívida zero sem nenhum componente; 617 são financeiras | mesma correção já aplicada aos outros `coalesce` |
+| `R-REV-001` | `teve_revisao_material` subconta ~24% e mistura bases | reescrever com a base eleita, 6 conceitos e limiar duplo |
 | `R-LUC-004` | derivação do pai em branco (3 fichas) | aval do mantenedor; altera número publicado |
 | `R-PL-002` | saldo final contra saldo médio no ROE | medir para quantas fichas o médio é calculável |
 | `R-PL-003` | **defeito novo**: 126 fichas publicam ROE com `pl_minoritarios = 0` REPORTADO enquanto a DRE da mesma ficha declara lucro de não controladores ≠ 0. 159 das 172 são `IDENTIDADE_OK` e sobrevivem à regra estrita. Máx. 50,19 pp (KLABIN 2025: 21,28% contra 11,65%) | mesma classe já corrigida em outros pontos: zero reportado tratado como fato quando outro demonstrativo o contradiz |
