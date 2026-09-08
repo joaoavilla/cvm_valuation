@@ -33,6 +33,22 @@ with fatos as (
 -- como "Obrigações Fiscais Diferidas" em uma empresa, e mapeá-lo por código criaria
 -- ambiguidade. Aqui cada pai é casado com os SEUS próprios filhos, que é a relação
 -- contábil de verdade.
+
+-- Os conceitos centrais em CADA base, antes de a politica escolher uma. Existe so para
+-- servir de testemunha a `base_degenerada`; nenhum valor daqui e publicado.
+valores_por_base as (
+
+    select
+        cd_cvm,
+        dt_fim_exercicio,
+        tipo_df,
+        max(case when conceito = 'lucro_liquido'   then valor end) as lucro,
+        max(case when conceito = 'receita_liquida' then valor end) as receita,
+        max(case when conceito = 'ativo_total'     then valor end) as ativo
+    from fatos
+    group by 1, 2, 3
+
+),
 blocos_atribuicao as (
 
     select
@@ -175,6 +191,7 @@ candidatos as (
     select
         p.cd_cvm,
         p.dt_fim_exercicio,
+        b.bloco,
         b.contr_bloco,
         b.minor_bloco,
 
@@ -205,13 +222,18 @@ candidatos as (
 -- ficha continua em CONFLITO_FONTE — a ambiguidade real segue sendo recusada.
 --
 -- Medido em 2026-09-07, no grão (cd_cvm, dt_fim_exercicio):
---   2 blocos, 1 fecha     8 fichas / 3 empresas   -> recuperadas (BANRISUL 2020/22/23/24,
---                                                    BCO ALFA 2023, FINANCEIRA ALFA 2021/22/23)
+--   2 blocos, 1 fecha     8 fichas / 3 empresas   -> 7 recuperadas de imediato (BANRISUL
+--                                                    2020/22/23/24, BCO ALFA 2023,
+--                                                    FINANCEIRA ALFA 2021/2022). A oitava,
+--                                                    FINANCEIRA ALFA 2023, so foi recuperada
+--                                                    quando o valor resolvido passou a chegar
+--                                                    ao mart -- ver o bloco de comentario da
+--                                                    escada de status, mais abaixo.
 --   2 blocos, 2 fecham    5 fichas / 5 empresas   -> seguem em CONFLITO_FONTE
 --   1 bloco               6.304 fichas            -> inalteradas
 preferidos as (
 
-    select cd_cvm, dt_fim_exercicio, contr_bloco, minor_bloco
+    select cd_cvm, dt_fim_exercicio, bloco, contr_bloco, minor_bloco
 
     from (
         select
@@ -232,6 +254,7 @@ atribuicao as (
         cd_cvm,
         dt_fim_exercicio,
         count(*)            as n_blocos,
+        min(bloco)          as bloco_origem,
         min(contr_bloco)    as contr_bloco,
         min(minor_bloco)    as minor_bloco
 
@@ -241,65 +264,154 @@ atribuicao as (
 
 ),
 
+
+-- Maior total entre os blocos da ficha DENTRO DA BASE ESCOLHIDA, casem eles com o
+-- lucro eleito ou não. O escopo por `tipo_df` é deliberado: comparar bloco de bases
+-- diferentes seria misturar contextos contábeis para preencher lacuna, que é
+-- exatamente o que este modelo recusa. A degeneração da BASE inteira é um problema
+-- distinto e tem testemunha própria logo abaixo.
+-- Serve de testemunha contra um bloco degenerado: quando o lucro eleito pelo seed é zero
+-- mas existe um bloco irmão com total diferente de zero, o zero é formulário em branco,
+-- não resultado nulo. BCO ALFA DE INVESTIMENTO 2021 e 2022 são o caso: a base consolidada
+-- traz `3.11` = 0 enquanto `3.09` traz R$ 73,88 mi e R$ 123,98 mi.
+blocos_resumo as (
+
+    select
+        cd_cvm,
+        dt_fim_exercicio,
+        tipo_df,
+        max(abs(total_bloco))                                        as maior_total_bloco,
+        -- Pai em branco com filhos preenchidos e a terceira forma de zero de formulario.
+        -- FINANCEIRA ALFA 2021 traz `3.09` = 0 com `3.09.01` = R$ 77,245 mi e
+        -- `3.09.02` = R$ 2,081 mi; CESP 2022 traz `3.11` = 0 com `3.11.01` = R$ 2,447 bi.
+        -- Sem esta testemunha o modelo publicava lucro dos controladores igual a zero
+        -- para empresa que lucrou. Medido em 2026-09-08: 3 blocos, 3 fichas, 2 empresas.
+        max(abs(coalesce(contr_bloco, 0) + coalesce(minor_bloco, 0))) as maior_soma_filhos
+    from blocos_atribuicao
+    group by 1, 2, 3
+
+),
+
+
+-- Testemunha de BASE degenerada: a base que a politica elegeu vem inteiramente zerada
+-- (lucro, receita e ativo) enquanto a outra base da mesma ficha tem numero.
+--
+-- Medido em 2026-09-08: 7 fichas / 4 empresas, de 6.235 fichas que publicam as duas bases.
+--   TIM S.A. 2024 e 2025          consolidado zerado; individual com R$ 25,4 e 26,6 bi de receita
+--   RIO PARANAPANEMA 2024 e 2025  idem, R$ 1,20 bi e R$ 1,26 bi
+--   CLI SUL 2025                  idem, R$ 723,1 mi
+--   CELGPAR 2022 e 2023           idem
+--
+-- Isto NAO corrige `lucro_liquido` nem `receita_liquida`, que continuam saindo zerados:
+-- trocar a base eleita altera a politica declarada em `int_empresas_tipo_df`, o invariante
+-- que a acompanha e numeros publicados. E decisao do mantenedor e esta registrada como
+-- pendencia. O que este modelo faz e recusar-se a publicar um lucro de controladores
+-- extraido de um formulario em branco.
+base_degenerada as (
+
+    select
+        p.cd_cvm,
+        p.dt_fim_exercicio,
+        true as base_eleita_zerada
+    from {{ ref('int_empresas_tipo_df') }} as p
+    join valores_por_base as e
+        on  e.cd_cvm = p.cd_cvm and e.dt_fim_exercicio = p.dt_fim_exercicio
+        and e.tipo_df = p.tipo_df_escolhido
+    join valores_por_base as o
+        on  o.cd_cvm = p.cd_cvm and o.dt_fim_exercicio = p.dt_fim_exercicio
+        and o.tipo_df <> p.tipo_df_escolhido
+    where coalesce(e.lucro, 0) = 0 and coalesce(e.receita, 0) = 0 and coalesce(e.ativo, 0) = 0
+      and not (coalesce(o.lucro, 0) = 0 and coalesce(o.receita, 0) = 0 and coalesce(o.ativo, 0) = 0)
+
+),
+
 derivado as (
 
     select
         p.*,
 
         -- ---------------------------------------------------------------------------
-        -- Lucro dos controladores, resolvido pela identidade e não pela leitura literal.
+        -- Lucro dos controladores: valor RESOLVIDO no bloco, nao lido do pivot.
         --
-        -- A identidade contábil do bloco é  total = controladores + não controladores.
-        -- Quando ela não fecha, a linha `.01` não é o lucro dos controladores, seja lá o
-        -- que a fonte tenha escrito ali. Medido em 2026-09-06 sobre 10.839 fichas:
+        -- O pivot do seed e a resolucao por bloco sao dois caminhos para o mesmo fato, e
+        -- ate 2026-09-08 o modelo usava um para decidir e o outro para publicar: as etapas
+        -- `candidatos`/`preferidos`/`atribuicao` identificavam o bloco integro e a escada
+        -- de status logo abaixo voltava a ler `p.lucro_liquido_controladores`, do pivot.
+        -- Quando os dois discordavam, o valor resolvido era calculado e descartado.
         --
-        --   IDENTIDADE_OK        5.809 fichas / 692 empresas   (usa a linha .01)
-        --   SEM_SPLIT            4.521 / 637   (base individual: a linha não existe)
-        --   SPLIT_NAO_INFORMADO    424 / 169   (.01 e .02 ambos zerados com total != 0)
-        --   CONFLITO_FONTE          85 /  69   (não fecha por outro motivo)
+        -- FINANCEIRA ALFA 2023 e o caso: o bloco `3.09` traz 18.578.000 + 4.466.000 =
+        -- 23.044.000 e fecha exatamente, enquanto o seed elege `3.11.01`, que a fonte
+        -- preencheu com zero -- a descricao do `3.09.01` tem NBSP (U+00A0) nas pontas e
+        -- por isso nao casa com a chave do seed. O mart publicava NULL. A demonstracao
+        -- consolidada IFRS da companhia confirma R$ 18.578 mil.
         --
-        -- Os dois últimos casos aparecem SÓ a partir de 2021 — zero ocorrências de 2010 a
-        -- 2020, depois 51, 77, 92, 103 e 102. O gabarito da CVM passou a exigir as linhas
-        -- e as empresas sem minoritários passaram a preenchê-las com zero.
+        -- Agora o valor resolvido vem do bloco quando ha bloco, e o pivot so entra quando
+        -- bloco nenhum foi identificado. Medido em 2026-09-08: das 6.317 fichas com bloco
+        -- resolvido, apenas 3 discordavam do pivot, e NENHUMA ficha ganha valor onde o
+        -- seed nada sabia -- a mudanca e cirurgica, nao uma troca de politica.
         --
-        -- SPLIT_NAO_INFORMADO: SABESP 2024 publica 3.11 = R$ 9,58 bi, 3.11.01 = 0 e
-        -- 3.11.02 = 0. Lido ao pé da letra, o mart publicava margem_liquida = 0,0% e
-        -- ROE = 0 para uma empresa que lucrou R$ 9,58 bi. Eram 390 margens e 419 ROEs
-        -- zerados, em nomes como TIM, KLABIN, CSN MINERAÇÃO, GUARARAPES e MRS.
+        -- SPLIT_NAO_INFORMADO: SABESP 2024 publica 3.11 = R$ 9,58 bi com `.01` e `.02`
+        -- zerados. Lido ao pe da letra, o mart publicava margem 0,0% e ROE 0 para uma
+        -- empresa que lucrou R$ 9,58 bi.
         --
-        -- CONFLITO_FONTE: AZUL 2024 publica 3.11 = -R$ 9,15 bi (prejuízo) e
-        -- 3.11.01 = +R$ 9,19 bi. O sinal está invertido NA FONTE — conferido no parquet
-        -- bruto, VL_CONTA = 9190174 contra -9151371, então não é defeito da ingestão.
-        -- O mart publicava margem_liquida = +47,07% para a empresa que mais perdeu
-        -- dinheiro no ano.
+        -- CONFLITO_FONTE: AZUL 2024 publica 3.11 = -R$ 9,15 bi e 3.11.01 = +R$ 9,19 bi.
+        -- O sinal esta invertido NA FONTE, conferido no parquet bruto. O mart publicava
+        -- margem +47,07% para a empresa que mais perdeu dinheiro no ano.
         --
-        -- Nos dois casos o valor volta a ser NULL e os indicadores recuam para o
-        -- consolidado, que é auto-consistente. `status_lucro_controladores` deixa a
-        -- decisão auditável e `lucro_liquido_controladores_fonte` preserva o que a CVM
-        -- disse, para quem quiser estudar o defeito.
+        -- Em todo caso nao resolvido o valor e NULL e os indicadores recuam para o
+        -- consolidado, que e auto-consistente. `origem_lucro_controladores` diz de qual
+        -- bloco o numero veio e `lucro_liquido_controladores_fonte` preserva o que o seed
+        -- elegeu, para que a discordancia continue estudavel.
         -- ---------------------------------------------------------------------------
+        coalesce(a.contr_bloco, p.lucro_liquido_controladores)     as contr_resolvido,
+        a.bloco_origem                                             as origem_lucro_controladores,
+
         case
-            when p.lucro_liquido_controladores is null then 'SEM_SPLIT'
+            when coalesce(a.contr_bloco, p.lucro_liquido_controladores) is null
+                                                                       then 'SEM_SPLIT'
             when coalesce(a.n_blocos, 0) > 1                           then 'CONFLITO_FONTE'
 
-            -- Contradição entre demonstrativos: a DRE atribui 100% do resultado aos NÃO
-            -- controladores enquanto o balanço diz que não existe participação de não
-            -- controladores. As duas linhas do bloco estão trocadas na fonte, e a
-            -- identidade fecha justamente porque o erro é consistente consigo mesmo —
-            -- só o cruzamento com o BPP o denuncia. Medido: 12 fichas atribuem tudo aos
-            -- minoritários; em 10 delas (LOJAS RENNER 2016 com R$ 625,1 mi, MARISA 2020,
-            -- LINX 2011, TEREOS 2013) o PL de minoritários é zero. A exceção legítima é
-            -- PPLA 2011, em que os minoritários detêm 100% do PL — e essa continua OK.
-            when p.lucro_liquido_controladores = 0
+            -- Bloco degenerado: o lucro eleito e zero, mas a propria empresa declara um
+            -- bloco irmao com total diferente de zero. Publicar controladores = 0 aqui
+            -- seria afirmar um numero que o formulario nao sustenta. BCO ALFA DE
+            -- INVESTIMENTO 2021 e 2022: a base consolidada traz `3.11` = 0 enquanto
+            -- `3.09` traz R$ 73,88 mi e R$ 123,98 mi.
+            when p.lucro_liquido = 0
+             and greatest(coalesce(r.maior_total_bloco, 0),
+                          coalesce(r.maior_soma_filhos, 0)) > 0        then 'CONFLITO_FONTE'
+
+            -- A base eleita veio inteiramente zerada e a outra base tem numero: o lucro
+            -- dos controladores que sairia daqui e zero de formulario em branco.
+            -- TIM 2024/2025, RIO PARANAPANEMA 2024/2025, CLI SUL 2025, CELGPAR 2022/2023.
+            when coalesce(z.base_eleita_zerada, false)                 then 'BASE_DEGENERADA'
+
+            -- Contradicao entre demonstrativos: a DRE atribui 100% do resultado aos NAO
+            -- controladores enquanto o balanco declara, com um zero EFETIVAMENTE
+            -- REPORTADO, que nao ha participacao de nao controladores. A identidade fecha
+            -- justamente porque o erro e consistente consigo mesmo; so o cruzamento com o
+            -- BPP o denuncia. Medido em 2026-09-08: 10 fichas / 8 empresas, TODAS com zero
+            -- reportado e NENHUMA com PL de minoritarios nulo -- LOJAS RENNER 2016
+            -- (R$ 625,1 mi), MARISA 2020, LINX 2011, VESTE 2014/2015. A excecao legitima e
+            -- PPLA 2011, em que os minoritarios detem 100% do PL, e essa continua OK.
+            --
+            -- Limite conhecido: saldo de PL no encerramento e estoque e nao determina
+            -- sozinho um fluxo anual -- a compra integral da participacao durante o ano
+            -- produziria a mesma assinatura. Por isso o estado e proprio e nao se mistura
+            -- com CONFLITO_FONTE: as 10 fichas ficam localizaveis para adjudicacao
+            -- documental (DMPL/notas) em vez de sumirem num rotulo generico.
+            when coalesce(a.contr_bloco, p.lucro_liquido_controladores) = 0
              and p.lucro_liquido <> 0
              and coalesce(a.minor_bloco, 0) <> 0
-             and p.patrimonio_liquido is not null
-             and coalesce(p.pl_minoritarios, 0) = 0                    then 'CONFLITO_FONTE'
-            when abs(p.lucro_liquido_controladores + coalesce(a.minor_bloco, 0) - p.lucro_liquido)
+             and p.pl_minoritarios = 0                                 then 'CONTRADICAO_DRE_BPP'
+
+            when abs(coalesce(a.contr_bloco, p.lucro_liquido_controladores)
+                     + coalesce(a.minor_bloco, 0) - p.lucro_liquido)
                  <= greatest(1000, abs(p.lucro_liquido) * 0.001)       then 'IDENTIDADE_OK'
-            when p.lucro_liquido_controladores = 0
+
+            when coalesce(a.contr_bloco, p.lucro_liquido_controladores) = 0
              and coalesce(a.minor_bloco, 0) = 0
              and p.lucro_liquido <> 0                                  then 'SPLIT_NAO_INFORMADO'
+
             else 'CONFLITO_FONTE'
         end                                                        as status_lucro_controladores,
 
@@ -318,16 +430,25 @@ derivado as (
         on  p.cd_cvm           = a.cd_cvm
         and p.dt_fim_exercicio = a.dt_fim_exercicio
 
+    left join blocos_resumo as r
+        on  p.cd_cvm           = r.cd_cvm
+        and p.dt_fim_exercicio = r.dt_fim_exercicio
+        and p.tipo_df          = r.tipo_df
+
+    left join base_degenerada as z
+        on  p.cd_cvm           = z.cd_cvm
+        and p.dt_fim_exercicio = z.dt_fim_exercicio
+
 ),
 
 validado as (
 
     select
-        * exclude (lucro_liquido_controladores),
+        * exclude (lucro_liquido_controladores, contr_resolvido),
 
         case
             when status_lucro_controladores = 'IDENTIDADE_OK'
-            then lucro_liquido_controladores
+            then contr_resolvido
         end                                                        as lucro_liquido_controladores
 
     from derivado
