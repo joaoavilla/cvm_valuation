@@ -469,7 +469,38 @@ final as (
 
     select
         *,
-        coalesce(lucro_liquido_controladores, lucro_liquido)       as lucro_atribuivel
+
+        -- ------------------------------------------------------------------------------
+        -- R-IND-001 -- numerador de margem_liquida e roe: resultado atribuivel aos socios
+        -- da ENTIDADE QUE REPORTA. Uma definicao so, realizada em dois contextos.
+        --
+        -- Ate 2026-09-08 isto era `coalesce(lucro_liquido_controladores, lucro_liquido)`, e o
+        -- campo mudava de significado conforme a disponibilidade do dado: 3.544 fichas
+        -- publicavam margem "dos controladores" calculada com o lucro consolidado, sob um
+        -- rotulo que prometia outra coisa.
+        --
+        -- A revisao externa recomendou tornar o indicador estrito em TODOS os casos. Medido,
+        -- isso removeria as 3.544 -- mas 3.070 delas (86,6%) sao de base INDIVIDUAL, onde
+        -- consolidado e controladores coincidem POR CONSTRUCAO e o numero esta certo. Numa
+        -- demonstracao individual nao existe participacao de nao controladores, e isso esta
+        -- medido, nao suposto: das 4.529 fichas individuais, 0 tem `pl_minoritarios`, e no
+        -- BPP as 3.911 linhas de "nao controladores" (500 empresas) estao TODAS em base
+        -- consolidada. O componente nao esta faltando; ele e identico ao total.
+        --
+        -- O contrato remove entao 474 margens e 451 ROEs -- as de base CONSOLIDADA em que a
+        -- substituicao de fato troca o significado:
+        --   SPLIT_NAO_INFORMADO 389 margens / 367 ROEs
+        --   CONFLITO_FONTE       75 /  74
+        --   CONTRADICAO_DRE_BPP  10 /  10
+        --   BASE_DEGENERADA       0 /   0  (ja eram nulas)
+        --
+        -- Quem quiser o resultado consolidado tem coluna propria e com nome inequivoco:
+        -- `margem_liquida_consolidada` e `roe_consolidado`.
+        -- ------------------------------------------------------------------------------
+        case
+            when tipo_df = 'INDIVIDUAL' then lucro_liquido
+            else lucro_liquido_controladores
+        end                                                        as lucro_atribuivel
     from validado
 
 )
