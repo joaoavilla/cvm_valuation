@@ -42,9 +42,15 @@ valores_por_base as (
         cd_cvm,
         dt_fim_exercicio,
         tipo_df,
-        max(case when conceito = 'lucro_liquido'   then valor end) as lucro,
-        max(case when conceito = 'receita_liquida' then valor end) as receita,
-        max(case when conceito = 'ativo_total'     then valor end) as ativo
+        -- Conta o que foi OBSERVADO e o que foi observado DIFERENTE DE ZERO. Contar assim,
+        -- e nao com coalesce(...,0), e o que impede tratar ausencia como zero: instituicao
+        -- financeira nao mapeia `receita_liquida`, e um NULL ali nao e evidencia de base
+        -- vazia -- e evidencia de nada.
+        count(*) filter (where conceito in ('lucro_liquido','receita_liquida','ativo_total'))
+            as n_observados,
+        count(*) filter (where conceito in ('lucro_liquido','receita_liquida','ativo_total')
+                           and valor <> 0)
+            as n_nao_zero
     from fatos
     group by 1, 2, 3
 
@@ -320,8 +326,12 @@ base_degenerada as (
     join valores_por_base as o
         on  o.cd_cvm = p.cd_cvm and o.dt_fim_exercicio = p.dt_fim_exercicio
         and o.tipo_df <> p.tipo_df_escolhido
-    where coalesce(e.lucro, 0) = 0 and coalesce(e.receita, 0) = 0 and coalesce(e.ativo, 0) = 0
-      and not (coalesce(o.lucro, 0) = 0 and coalesce(o.receita, 0) = 0 and coalesce(o.ativo, 0) = 0)
+    -- A base eleita observou pelo menos um conceito central e TODOS os observados valem
+    -- zero; a outra base observou pelo menos um diferente de zero. Ausencia nao entra na
+    -- conta de nenhum dos dois lados.
+    where e.n_observados > 0
+      and e.n_nao_zero = 0
+      and o.n_nao_zero > 0
 
 ),
 

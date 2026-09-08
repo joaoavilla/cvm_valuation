@@ -562,7 +562,13 @@ cresce sozinha.
 
 Regras que já custaram caro e não se negociam:
 
-- **Tolerância relativa, nunca absoluta.** O valor absoluto varia com a formatação da fonte.
+- **Tolerância derivada da precisão publicada, não um percentual fixo.** A regra anterior
+  dizia "relativa, nunca absoluta", e isso é cego: uma fonte que publica "R$ 23,0 milhões"
+  sustenta o intervalo [22,95; 23,05] mi, e não uma tolerância de 0,5% escolhida a dedo.
+  Quando a fonte publica arredondado, compare contra o intervalo de arredondamento; quando
+  publica na unidade exata, compare por igualdade. O percentual relativo continua sendo a
+  aproximação aceitável quando a precisão da fonte não está documentada — e nesse caso a
+  limitação tem de estar escrita na `observacao`, em vez de virar exatidão inventada.
 - **Registre a URL e a citação literal.** Agregador reformata o número conforme a consulta.
 - **Classifique a divergência antes de chamá-la de defeito.** Metade das 37 desta auditoria
   era norma contábil diferente, safra reapresentada ou número gerencial — o mart estava certo.
