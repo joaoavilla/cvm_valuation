@@ -155,21 +155,37 @@ models:
           consolidado, que é auto-consistente. Ver status_lucro_controladores.
       - name: lucro_liquido_controladores_fonte
         description: >
-          O que a CVM publicou na linha 3.x.01, sem validação. Preservado para auditoria do
-          defeito: é a coluna que mostra AZUL 2024 com +R$ 9,19 bi contra um prejuízo
-          consolidado de R$ 9,15 bi.
+          O que o pivot do seed elegeu na linha 3.x.01, sem validação. Preservado para
+          auditoria: mostra AZUL 2024 com +R$ 9,19 bi contra um prejuízo consolidado de
+          R$ 9,15 bi, e FINANCEIRA ALFA 2023 com 0 contra os R$ 18,578 mi resolvidos.
+      - name: origem_lucro_controladores
+        description: >
+          Código do bloco da DRE (3.09, 3.11 ou 3.13) de onde o valor resolvido veio.
+          É a linhagem do número: sem ela não dá para saber se o lucro dos controladores
+          saiu do mesmo bloco que o lucro consolidado.
       - name: status_lucro_controladores
         description: >
           IDENTIDADE_OK = a soma fecha e o valor é usado.
           SEM_SPLIT = a base não abre a linha (individual), recuo para o consolidado.
           SPLIT_NAO_INFORMADO = a fonte zerou as duas linhas do bloco tendo lucro não nulo.
-          CONFLITO_FONTE = a soma não fecha, há mais de um bloco candidato, ou a DRE
-          atribui tudo aos não controladores enquanto o balanço não registra minoritários.
+          CONTRADICAO_DRE_BPP = a DRE atribui 100% do resultado aos não controladores
+          enquanto o balanço reporta zero de participação de não controladores. Estado
+          próprio, e não CONFLITO_FONTE, porque a testemunha é um saldo de encerramento
+          (estoque) usado contra um fluxo anual: sustenta suspeita, não prova. As fichas
+          ficam localizáveis para adjudicação documental.
+          BASE_DEGENERADA = a base que a política elegeu veio inteiramente zerada
+          (lucro, receita e ativo) enquanto a outra base tem número — 7 fichas / 4 empresas,
+          entre elas TIM 2024 e 2025. O defeito é da política consolidado/individual e não
+          desta coluna: `lucro_liquido` e `receita_liquida` continuam saindo zerados, e a
+          correção está pendente de decisão do mantenedor.
+          CONFLITO_FONTE = a soma não fecha, há mais de um bloco candidato, ou o lucro
+          eleito é zero havendo bloco irmão com total não nulo na mesma base.
         data_tests:
           - not_null
           - accepted_values:
               arguments:
-                values: ['IDENTIDADE_OK', 'SEM_SPLIT', 'SPLIT_NAO_INFORMADO', 'CONFLITO_FONTE']
+                values: ['IDENTIDADE_OK', 'SEM_SPLIT', 'SPLIT_NAO_INFORMADO',
+                         'CONTRADICAO_DRE_BPP', 'BASE_DEGENERADA', 'CONFLITO_FONTE']
       - name: pl_minoritarios
         description: Participação dos acionistas não controladores dentro do PL.
       - name: patrimonio_liquido_controladores
