@@ -590,6 +590,19 @@ por proposta prestes a virar código, e **2 derrubaram a proposta**.
 - Persista o resultado em **arquivo do repositório** ao fim de cada lote. O `result` de
   workflow é temporário: 8,5 M de tokens de trabalho quase se perderam por isso.
 
+## Não reconstrua o warehouse enquanto agentes medem
+
+Erro cometido em 2026-09-08 e registrado para não se repetir. Dois refutadores foram lançados
+sobre medições de impacto e, no meio da execução deles, o modelo foi corrigido e o
+`dbt build` rodou. Os refutadores mediram uma tabela que já era outra e devolveram
+`refutado = true` — com razão formal e conclusão errada: o que eles provaram foi que a
+mudança **já tinha entrado**, não que a análise estivesse furada. A diferença que eles
+mediram (474 margens e 451 ROEs) é exatamente a que o commit declara.
+
+O warehouse é estado global e compartilhado: `dbt build` o substitui inteiro e ainda segura
+lock exclusivo. Enquanto houver agente medindo, ele é imutável. Ou se mede antes e se aplica
+depois, ou se aplica e se remede — nunca as duas coisas ao mesmo tempo.
+
 ## Ao retomar em lote
 
 Uma dimensão por vez, medição → refutação → correção → conjunto dourado → commit. Cada

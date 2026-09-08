@@ -51,15 +51,35 @@ dispara em **2** — nas outras **117** o seed elege `3.13`, que carrega o valor
 (BCO NORDESTE, DIBENS LEASING, SANTANDER LEASING, BTG 2010…). A guarda não é cega: ela só
 engata quando o total eleito é ele próprio zero.
 
-> **Correcao de registro.** Eu havia escrito "refutado". Está errado, e a segunda revisão
-> tem razão: isto é **contraexemplo não observado neste recorte**, não hipótese refutada.
-> Não achar compensação nas fichas medidas não transforma a guarda em regra contábil
-> universal. Duas limitações do recorte, declaradas: a consulta agrega com `max()` por
-> `(cd_cvm, dt_fim_exercicio)` e portanto **não preserva contexto documental nem de
-> período**; e ela varre só a base eleita pela política, não as duas. **Pendência aberta:**
-> refazer preservando `(tipo_df, dt_referencia, versao, ordem_exercicio,
-> dt_inicio_exercicio)` e criar um **teste sintético de compensação legítima**, que
-> exercite o caso sem depender de a fonte um dia produzi-lo.
+> **Correcao de registro, e a medição refeita.** Eu havia escrito "refutado". Está errado:
+> isto é **contraexemplo não observado**, não hipótese refutada. A crítica à medição
+> também procede, e **era pior do que ela supunha**. Refeita com o contexto documental
+> completo `(cd_cvm, tipo_df, dt_referencia, versao, ordem_exercicio, dt_inicio_exercicio,
+> dt_fim_exercicio)`:
+>
+> - No grão grosso o padrão aparecia em **328 fichas**; com contexto completo sobram **234**.
+>   **94 (28,7%) eram artefato** do `max()` pegando o `3.09` do CONSOLIDADO e o `3.11 = 0` do
+>   INDIVIDUAL — BRADESCO 2010–2019, BANESTES 2010–2018. E o grão grosso também
+>   **escondia 3 casos reais**, dois deles entre os que a guarda de fato pega. A consulta
+>   inventava e ocultava ao mesmo tempo.
+> - **A guarda em produção nunca teve esse defeito:** `blocos_resumo` sempre agrupou por
+>   `tipo_df` e o join sempre casou `p.tipo_df = r.tipo_df`. E o `max()` dentro de
+>   `blocos_atribuicao` não desempata nada: **17.071 de 17.072** chaves já são o contexto
+>   documental completo, com **0** casos de múltipla `dt_referencia` ou `versao` e
+>   **0 de 47.151** células com duas descrições para o mesmo código.
+> - **Contraexemplo varrido em 33.972 contextos** (plano PADRAO, 2009–2025, 1.222 empresas,
+>   as duas ordens de exercício): **zero ocorrências**. Nas 5 fichas em que a guarda dispara,
+>   o `3.10` está presente e vale exatamente zero nas cinco. Continua sendo **não observado**,
+>   não refutado — o caso é contabilmente válido e a fonte pode produzi-lo.
+> - **Alcance real da guarda: 5 fichas de 10.847 (0,046%)** — 125 têm lucro eleito zero, só 5
+>   têm irmão não zero. Dos 94 `CONFLITO_FONTE` do mart, 5 vêm daqui.
+> - Fato colateral que derruba a leitura fácil de "`3.10` quase nunca é diferente de zero":
+>   ele é ≠ 0 em 5,81% do plano PADRAO mas em **47% a 91%** dos planos LEGADO_FIN, FIN_2020 e
+>   DESLOCADO — onde não é operação descontinuada nenhuma. O código não determina o
+>   significado, de novo.
+>
+> **Pendência:** criar o **teste sintético de compensação legítima**, que exercite o caso sem
+> depender de a fonte um dia produzi-lo.
 
 **R2 — "O consolidado zerado no fato não permite concluir que a companhia não tinha
 consolidado válido."**
@@ -139,6 +159,61 @@ observado e todos os observados iguais a zero, mas isso **não prova que a base 
 inválida** — prova que os conceitos que o seed cobre estão zerados. É um **detector parcial**,
 e o estado que ele produz deve ser lido como suspeita dirigida à investigação, não como
 conclusão.
+
+### 1.5 Piloto documental da TIM 2024 — conclusão `[MEDIDO 2026-09-08]`
+
+A cadeia completa foi percorrida: ZIP original → CSV → manifesto → Parquet → staging → fato → mart.
+
+**A ingestão está inocentada com prova documental.** O CSV `dfp_cia_aberta_DRE_con_2024.csv`
+extraído do ZIP original da CVM (**sha256 `b46123d7…`, idêntico ao registrado no manifesto**)
+já traz as 31 linhas de `ORDEM_EXERC='ÚLTIMO'` da TIM com `VL_CONTA = 0`, enquanto as 31 de
+`PENÚLTIMO` trazem 22 valores não nulos. O Parquet é **cópia byte a byte**: o multiset das
+32.776 linhas × 15 colunas é idêntico. Staging, `int`, `fct` e mart propagam o zero sem
+alteração, com `status_valor = 'OK'` e `n_linhas_fonte = 1` — nenhuma quarentena, nenhum
+desempate. E a conversão de escala funciona no **mesmo documento** (o PENÚLTIMO vira
+2,3833893e10), então o zero não é artefato de escala.
+
+**Três hipóteses derrubadas pela medição, e cada uma muda a proposta de recuperação:**
+
+1. **Não é defeito da DRE, é do documento inteiro.** O bloco consolidado veio zerado em
+   **277 de 277** linhas de BPA+BPP+DFC_MI+DRE, e também em `DRA_con` (0/7) e `DVA_con`
+   (0/41) — arquivos que o projeto **nem sequer ingere**. O defeito é do transmissor.
+2. **Não há uma assinatura, há três.** Só o ÚLTIMO zerado com PENÚLTIMO íntegro; documento
+   inteiro zerado nas duas ordens; e o caso CELGPAR, em que **a própria CVM já publicou a
+   correção numa safra posterior** e o mart continua publicando zero. Este terceiro é o mais
+   acionável: a fonte de recuperação está dentro do dado que já temos.
+3. **Trocar pela base individual seria errado em metade dos casos.** Para TIM e RIO
+   PARANAPANEMA o individual é excelente (lucro idêntico ao consolidado em 100% dos anos
+   saudáveis). Mas a receita individual da **CELGPAR é zero em 12 dos 13 anos saudáveis**
+   enquanto a consolidada chega a R$ 2,2 bi, e o lucro individual da **CLI SUL diverge −36%
+   a −42%**. Substituir cegamente trocaria um zero honesto por um número errado em 2 das 4
+   empresas. **Isto encerra a opção "recuar para a outra base" como política geral.**
+
+**O amplificador está na nossa camada, mas não na ingestão.** `int_empresas_tipo_df` elege a
+base com `bool_or(tipo_df = 'CONSOLIDADO')` — olha a **existência** de linhas consolidadas,
+nunca se elas carregam algum número. O mart já **detecta** (`BASE_DEGENERADA`) mas não **age**.
+
+### 1.6 Um defeito novo, no denominador do ROE `[MEDIDO 2026-09-08]`
+
+A hipótese de que `coalesce(pl_minoritarios, 0)` contaminava o denominador foi **refutada**:
+`pl_minoritarios` é nulo exatamente nas 4.529 fichas individuais e em **0 de 6.318**
+consolidadas, nos 16 anos e nos dois planos. É identidade contábil, não fallback.
+
+**Mas o segundo fallback existe, e está no ZERO REPORTADO:** 2.573 fichas consolidadas trazem
+`pl_minoritarios = 0` e, em **172 delas (6,7%)**, a DRE da mesma ficha declara lucro de não
+controladores diferente de zero. Dessas 172, **159 são `IDENTIDADE_OK` e portanto sobrevivem
+à regra estrita**, e **126 publicam `roe` hoje** com denominador igual ao PL total de uma
+empresa que demonstravelmente tem minoritários. O mart sinaliza apenas 10 delas
+(`CONTRADICAO_DRE_BPP`), porque aquele estado exige também `controladores = 0`.
+
+Magnitude nas 81 fichas em que há divergência: p50 = 0,0000 pp · p90 = 0,0000 pp ·
+p99 = 0,0140 pp · **max = 50,19 pp**; 18 acima de 1 pp, 7 acima de 5 pp. KLABIN 2025: 21,28%
+contra 11,65% do consolidado. CPFL GERAÇÃO 2021: 50,78% contra 29,49%.
+
+`[PENDENTE]` É o próximo defeito da fila, e é do mesmo tipo que os já corrigidos: zero
+reportado tratado como fato quando outro demonstrativo o contradiz.
+
+---
 
 ---
 

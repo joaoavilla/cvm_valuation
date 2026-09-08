@@ -195,5 +195,7 @@ quais ingestões novas o projeto precisa — e não o contrário.
 | `R-TMP-001` | magnitude da diferença entre série original e reapresentada, por conceito | medir com denominador |
 | `R-LUC-004` | derivação do pai em branco (3 fichas) | aval do mantenedor; altera número publicado |
 | `R-PL-002` | saldo final contra saldo médio no ROE | medir para quantas fichas o médio é calculável |
+| `R-PL-003` | **defeito novo**: 126 fichas publicam ROE com `pl_minoritarios = 0` REPORTADO enquanto a DRE da mesma ficha declara lucro de não controladores ≠ 0. 159 das 172 são `IDENTIDADE_OK` e sobrevivem à regra estrita. Máx. 50,19 pp (KLABIN 2025: 21,28% contra 11,65%) | mesma classe já corrigida em outros pontos: zero reportado tratado como fato quando outro demonstrativo o contradiz |
+| `R-BASE-001` | base degenerada: recuar para a outra base está **descartado como política geral** — a receita individual da CELGPAR é zero em 12 de 13 anos saudáveis e o lucro da CLI SUL diverge −36% a −42%. Para CELGPAR a própria CVM publicou correção em safra posterior | tratar caso a caso por causa, e usar a safra posterior onde ela existe |
 | `R-IND-001` | adoção do contrato (474 margens saem) | aval do mantenedor |
 | §5 | matriz de fontes | concluir antes de qualquer ingestão nova |
