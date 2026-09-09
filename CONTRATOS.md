@@ -66,7 +66,7 @@ publicação nem conhecimento numa data.
 
 `mart_fundamentos_anuais` publica hoje **exclusivamente a primeira leitura**.
 
-### `R-TMP-002` · o acerto do acervo, e o que ele impõe `[MEDIDO 2026-09-09]`
+### `R-TMP-002` · o que o acervo guarda, e o que isso impõe `[MEDIDO 2026-09-09]`
 
 **O acervo guarda apenas a versão corrente de cada documento.**
 
