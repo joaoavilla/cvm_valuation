@@ -51,47 +51,88 @@ consolidada com valor da individual não é recuperação: é troca de significa
 
 ---
 
-## 2. Temporalidade `R-TMP-001`
+## 2. Temporalidade e seleção documental
 
-Existem **duas séries diferentes** e cada coluna precisa dizer a qual pertence:
+Reescrita em 2026-09-09 depois da terceira revisão externa, que apontou — com razão — que
+`ORDEM_EXERC` distingue a **posição do exercício dentro do documento**, e não primeira
+publicação nem conhecimento numa data.
 
-| Série | O que é | Como se obtém hoje |
+### `R-TMP-001` · o que as duas leituras são, de fato
+
+| Leitura | O que é | O que **não** é |
 |---|---|---|
-| **Original** | o que a companhia publicou para aquele exercício, no documento daquele exercício | `safra_original = true` (`ordem_exercicio = 'ÚLTIMO'`) |
-| **Reapresentada** | o mesmo exercício como aparece em documento posterior | `safra_original = false` |
+| `safra_original = true` | o exercício na **versão corrente do documento do próprio exercício** | **não é** a primeira publicação |
+| `safra_original = false` | o mesmo exercício como comparativo em documento posterior | — |
 
-`mart_fundamentos_anuais` publica hoje **exclusivamente a série original**. Isso é uma escolha,
-não um acidente, e passa a estar escrito aqui.
+`mart_fundamentos_anuais` publica hoje **exclusivamente a primeira leitura**.
 
-**`R-TMP-002` — recuperação documental não reescreve o passado.** Um valor recuperado hoje de
-um documento antigo entra com três datas distintas: **data de publicação** do documento, **data
-de coleta** e **data de incorporação** ao pipeline. Ele não pode aparecer como se já fosse
-conhecido pelo sistema antes da incorporação.
+### `R-TMP-002` · o acerto do acervo, e o que ele impõe `[MEDIDO 2026-09-09]`
 
-**`R-TMP-003` — as duas séries precisam existir.** `[MEDIDO 2026-09-08]` A pendência está
-fechada, e a resposta não é "a diferença é irrelevante":
+**O acervo guarda apenas a versão corrente de cada documento.**
 
-- **9.517 de 10.847 fichas (87,7%)** existem em mais de uma safra. Destas, **3.663 (38,5%)**
-  têm diferença material em algum conceito mapeado e **1.571 (16,5%)** em conceito central.
-- **Todos os 12 indicadores se mexem.** `margem_liquida_total` muda em **980 de 7.770**
-  fichas comparáveis (12,6%), 387 por mais de 1 pp e **26 trocam de sinal**.
-  `roe_total` muda em 762 de 8.312 (9,2%), 33 trocam de sinal.
-- **O caso que encerra a discussão: AMERICANAS 2021.** O mart publica hoje margem consolidada
-  de **+2,40%** com status `IDENTIDADE_OK`; na safra seguinte a mesma ficha aparece com
-  **−27,70%** — um lucro de R$ 543,795 mi virou prejuízo de R$ 6,237 bi. CSN 2015: +10,54%
-  contra −7,97%. AUREN 2021: +11,88% contra −17,92%.
-- Um backtest que use a série reapresentada como se fosse conhecida na época **está olhando o
-  futuro**. Publicar a série original, como o mart faz, é a escolha certa — e a outra série
-  precisa existir com nome próprio, não substituir esta.
+```sql
+select versao, count(*) documentos
+from (select distinct cd_cvm, dt_referencia, versao from fct_fundamentos)
+group by 1 order by 1;
 
-**`R-TMP-004` — `versao` não é um terceiro eixo.** `[MEDIDO]` Das **492.814** chaves da safra
-original, **zero** têm mais de uma versão com valor divergente. São duas leituras por
-exercício, não três.
+select n_versoes, count(*) documentos from (
+  select cd_cvm, dt_referencia, count(distinct versao) n_versoes
+  from fct_fundamentos group by 1,2) group by 1;
+```
 
-**`R-TMP-005` — nem toda diferença entre safras é revisão contábil.** `[MEDIDO]` **1.832 de
-23.394** diferenças materiais (7,8%) são fator exatamente 1000 para cima ou para baixo: são
-contradição de etiqueta de **escala**, já instrumentada por `assert_escala_sem_contradicao`.
-Quem medir taxa de revisão sem excluir isso conta artefato como fato.
+| | |
+|---|---:|
+| Documentos com `versao = 1` | 8.420 |
+| Documentos **refeitos** (`versao > 1`, chegando a 9) | **2.427** |
+| Fichas do mart vindas de documento refeito | **2.427 de 10.847 — 22,4%** |
+| Documentos com **mais de uma versão no acervo** | **0 de 10.847** |
+
+Ou seja: em **22,4% das fichas**, o que chamamos de "safra original" é a versão **corrente** do
+documento daquele exercício, que **já pode conter correções feitas depois**. A versão
+originalmente publicada está perdida — os arquivos em massa da CVM só carregam a versão
+vigente, e a ingestão sobrescreve o raw (defeito A1 do histórico).
+
+**Correção de uma afirmação minha.** Eu havia registrado que "`versao` não é um terceiro eixo,
+porque 0 de 492.814 chaves têm mais de uma versão com valor divergente". A conclusão não se
+sustenta: **não há divergência porque só guardamos uma versão de cada documento**, e não porque
+as versões coincidam. A revisão externa alertou exatamente para isso, e estava certa.
+
+### `R-TMP-003` · as quatro perguntas, e o que o acervo responde
+
+| Pergunta | Política necessária | Podemos responder hoje? |
+|---|---|---|
+| Qual foi a **primeira publicação**? | primeira observação documentada, declarando lacunas | **NÃO** para 22,4% — só temos a versão corrente |
+| O que estava **disponível na data X**? | só documentos publicados até X | **PARCIALMENTE** — `dt_recebimento` existe, mas é o da versão que temos |
+| Qual é a informação **mais recente**? | observação elegível mais recente, com origem preservada | **SIM** |
+| O que o **pipeline já incorporara** na data X? | data de incorporação | **NÃO** — não registrada |
+
+Duas colunas não bastam: é preciso definir a **seleção entre documentos e versões**, e as duas
+lacunas acima são pré-requisito de qualquer recuperação por safra posterior.
+
+### `R-TMP-004` · as duas séries divergem, e isso importa `[MEDIDO 2026-09-08]`
+
+- **9.517 de 10.847 fichas (87,7%)** existem em mais de uma safra; **3.663 (38,5%)** divergem
+  materialmente em algum conceito e **1.571 (16,5%)** em conceito central.
+- `margem_liquida_total` muda em **980 de 7.770** fichas comparáveis (12,6%), 387 por mais de
+  1 pp e **26 trocam de sinal**. `roe_total` muda em 762 de 8.312, 33 trocam de sinal.
+- **AMERICANAS 2021**: o mart publica **+2,40%**; na safra seguinte, **−27,70%** — lucro de
+  R$ 543,795 mi virou prejuízo de R$ 6,237 bi. CSN 2015: +10,54% contra −7,97%.
+
+Um backtest que use a série reapresentada como se fosse conhecida na época **está olhando o
+futuro**. Publicar a leitura do próprio exercício é a escolha certa; a outra precisa existir com
+nome próprio, não substituir esta.
+
+### `R-TMP-005` · recuperação documental não reescreve o passado
+
+Um valor recuperado de documento posterior entra com **três datas**: **publicação** do
+documento, **coleta** e **incorporação**. Ele aparece a partir da publicação do documento
+corretivo, **preserva a observação anterior** e não retroage.
+
+### `R-TMP-006` · nem toda diferença entre safras é revisão contábil `[MEDIDO]`
+
+**1.832 de 23.394** diferenças materiais (7,8%) são fator exatamente 1000 — contradição de
+etiqueta de **escala**, já instrumentada por `assert_escala_sem_contradicao`. Quem medir taxa
+de revisão sem excluir isso conta artefato como fato.
 
 ---
 
@@ -312,7 +353,9 @@ ampliar o veto `CONTRADICAO_DRE_BPP` com base nesta hipótese.**
 
 | ID | Pendência | Próximo passo |
 |---|---|---|
-| `R-TMP-003` | **fechada**: as duas séries divergem em 12,6% dos indicadores, com 26 trocas de sinal (AMERICANAS 2021: +2,40% → −27,70%) | expor a série reapresentada com nome próprio |
+| `R-TMP-002` | **primeira publicação é irrecuperável para 22,4% das fichas** — o acervo só tem a versão corrente | arquivar cada download antes de qualquer reingestão; declarar a lacuna nas séries |
+| `R-TMP-003` | data de incorporação não é registrada | acrescentar ao manifesto e propagar |
+| `R-TMP-004` | as duas séries divergem em 12,6% dos indicadores, com 26 trocas de sinal | expor a série reapresentada com nome próprio |
 | `R-DIV-001` | 650 fichas publicam dívida zero sem nenhum componente; 617 são financeiras | mesma correção já aplicada aos outros `coalesce` |
 | `R-REV-001` | `teve_revisao_material` subconta ~24% e mistura bases | reescrever com a base eleita, 6 conceitos e limiar duplo |
 | `R-LUC-004` | derivação do pai em branco (3 fichas) | aval do mantenedor; altera número publicado |
