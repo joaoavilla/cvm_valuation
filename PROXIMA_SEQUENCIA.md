@@ -234,95 +234,46 @@ período inicial e final.
 
 ---
 
-## 3. Sequência proposta
+## 3. Sequência — estado em 2026-09-09
 
-Uma etapa por branch/PR, com critério de saída verificável. **Nada de generalizar para
-patrimônio, receita, custo ou EBIT antes da Etapa 4.**
+Ordem revisada pela terceira revisão externa e adotada. Uma etapa por commit, com critério de
+saída verificável. **Estado analisado carimbado em toda medição**: commit, estado da árvore e
+`mtime` do warehouse.
 
-### Etapa 0 — Parar de afirmar o que não foi verificado
-Barata, sem decisão de produto, sem mudar número publicado.
+| # | Etapa | Estado |
+|---|---|---|
+| 0 | Parar de afirmar o que não foi verificado | ✅ `f3bfd04` |
+| 1 | Contratos mínimos de conceitos e indicadores | ✅ `b97fa82` |
+| 2 | Correcao do fallback de margem e ROE | ✅ `dcaa7bf` |
+| 3 | **Sanear registros** — `R-PL-003` a hipótese, Klabin reconciliada, linguagem da base individual, nomes das versões "consolidadas" | ✅ `2f0ab7b` + `c231c3b` |
+| 4 | **Corrigir a dívida e seus consumidores** | ✅ `c231c3b` |
+| 5 | **Fechar a seleção temporal** | ✅ contrato em `18c4cf6`; **duas lacunas do acervo ficam pendentes** |
+| 6 | **CELGPAR como piloto de recuperação temporal** | ⏸ **bloqueado** — ver abaixo |
+| 7 | Demais bases zeradas e investigação patrimonial | pendente |
+| 8 | Extrair a resolução para antes do pivot; depois generalizar por família | pendente |
 
-- **0.1** `conjunto_dourado.csv`: a linha `003891,2023,lucro_liquido_controladores` passa a
-  `fonte_tipo = 'dfp_interno'`, com a pendência de confirmação externa registrada. A linha
-  `lucro_liquido` continua `relatorio_anual` — essa **está** confirmada em documento.
-- **0.2** `base_degenerada`: exigir valor presente em vez de `coalesce(...,0)=0`.
-- **0.3** Substituir a diretriz "tolerância relativa, nunca absoluta" por **tolerância
-  derivada da precisão publicada**, com as duas formas (intervalo de arredondamento quando a
-  fonte publica arredondado; igualdade quando publica na unidade exata).
+### Por que a CELGPAR está bloqueada, e não apenas não-feita
 
-**Saída:** nenhuma afirmação do repositório sustentada por evidência de tipo diferente do
-declarado. Build inalterado, nenhum número publicado muda.
+A recuperação por safra posterior exige, por `R-TMP-005`, que o valor entre com **data de
+publicação, data de coleta e data de incorporação**, preservando a observação anterior. Duas
+dessas não existem hoje:
 
-### Etapa 1 — Contrato dos indicadores
-Registrar, por indicador: significado, numerador, denominador, base, período, aplicabilidade,
-comportamento diante de **ausência**, de **zero reportado** e de **conflito**, e o tipo de
-fonte que o sustenta.
+- **data de incorporação não é registrada** em lugar nenhum do pipeline (`R-TMP-003`);
+- **a primeira publicação é irrecuperável para 22,4% das fichas** (`R-TMP-002`), porque o
+  acervo guarda apenas a versão corrente de cada documento.
 
-**Entram na Etapa 1, e não na 6** (correção pedida pela segunda revisão — deixá-las para
-o fim obrigaria a refazer a resolução):
-- **Temporalidade**: qual série cada coluna representa — valor reapresentado ou valor
-  conhecido na data. O projeto já tem `safra_original`; falta o contrato dizer a qual
-  série cada coluna pertence, e uma recuperação documental feita hoje **não pode
-  aparecer como se já fosse conhecida no passado**.
-- **Grão documental**: documento, versão, base e período inicial e final fazem parte do
-  contexto de todo valor publicado.
-- **Matriz inicial** indicador → componentes → fontes → validação, ainda que a
-  implementação seja gradual. Escopo mínimo: `lucro_liquido`, `lucro_liquido_controladores`,
-`patrimonio_liquido`, `patrimonio_liquido_controladores`, `margem_liquida`, `roe`.
+Executar a recuperação antes disso produziria exatamente o que `R-TMP-005` proíbe: um valor
+corretivo aparecendo como se sempre tivesse estado lá. A ordem correta é implementar a data de
+incorporação, e só então a CELGPAR.
 
-Cada regra ganha **identificador** (`R-LUC-001`) usado no código, no teste e no registro da
-decisão, para que "por que este número?" se responda sem reconstruir conversa.
+### O que a Etapa 5 deixou pronto e o que deixou em aberto
 
-**Saída:** nenhum campo com definição implícita ou fallback que mude seu significado.
+Pronto: a distinção entre as duas leituras, a medição de que elas divergem em 12,6% dos
+indicadores com 26 trocas de sinal, e a regra de que recuperação não retroage.
 
-### Etapa 2 — Aplicar o contrato onde ele já contradiz o código `[DECISÃO]`
-`margem_liquida` e `roe` passam a ser estritos: NULL quando o componente contratado falta.
-`margem_liquida_total` e `roe_total` continuam sendo as versões com o resultado total da base.
-
-**Alcance medido: 3.544 fichas perdem `margem_liquida`** e passam a depender da coluna
-consolidada. Muda números publicados — **é decisão do mantenedor**, não minha.
-
-**Saída:** numerador, denominador, base e período compatíveis e explicitados em cada coluna.
-
-### Etapa 3 — Diagnóstico documental das ocorrências abertas
-Sem concluir defeito por comparação estrutural.
-
-- **3.1** Bases zeradas (7 fichas). TIM 2024 já rastreada até o raw (§1.2 R2). Repetir para
-  Rio Paranapanema 2024/2025, CLI Sul 2025, Celgpar 2022/2023 e TIM 2025, classificando cada
-  uma como erro de ingestão, arquivo defeituoso com documento correto, consolidado
-  inaplicável, ou evidência insuficiente.
-- **3.2** `CONTRADICAO_DRE_BPP` (10 fichas). Buscar DMPL e notas. Saldo final de participação
-  e resultado atribuído no exercício são medidas diferentes: sem documento, a classificação
-  permanece suspeita e não vira conclusão.
-- **3.3** Confirmar externamente a cisão da Alfa (23.044 / 18.578 / 4.466). A publicação de
-  demonstrações não foi acessível deste ambiente; o resumo da administração confirma só o
-  total consolidado.
-
-**Saída:** cada ocorrência com causa demonstrada ou pendência delimitada, com próxima
-evidência nomeada.
-
-### Etapa 4 — Resolução com linhagem completa
-Separar geração de candidatos, validação, escolha e publicação numa etapa anterior ao pivot,
-registrando candidatos considerados e rejeitados, regra aplicada, documento e versão, base,
-período inicial e final.
-
-**Saída:** valor publicado com contexto completo e rastreabilidade; ambiguidade não
-desempatada arbitrariamente.
-
-### Etapa 5 — Generalizar por família, uma de cada vez
-Patrimônio líquido primeiro (2.03 / 2.05 / 2.07 / 2.08 e os respectivos minoritários), com
-validação própria incluindo casos que não orientaram a implementação. Depois receita, custo e
-EBIT.
-
-### Etapa 6 — Matriz indicador → componentes → fontes → validação
-É ela que decide as próximas ingestões, e não o contrário. ITR, FRE, preços, quantidade de
-ações e proventos entram quando um indicador contratado os exigir.
-
-Aqui também se decide o significado de **histórico**: série reapresentada contra série
-conhecida na data. O projeto já tem `safra_original`; falta o contrato dizer a qual série
-cada coluna pertence.
-
----
+Em aberto, e **antes de qualquer reingestão**: arquivar cada download. Enquanto isso não
+existir, cada `python -m ingestion` destrói a única cópia do que a CVM dizia antes — e já se
+sabe que 22,4% dos documentos foram refeitos.
 
 ## 4. Registros canônicos
 
