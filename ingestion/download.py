@@ -84,16 +84,26 @@ def dir_de_capturas(destino: Path) -> Path:
 def preservar_captura(destino: Path, sha_novo: str) -> Path | None:
     """Arquiva o ZIP que está prestes a ser sobrescrito, quando o conteúdo mudou.
 
-    O nome do arquivo preservado carrega o hash do CONTEÚDO, não a data: duas execuções
-    que baixem o mesmo conteúdo não geram duas cópias, e a identidade da fonte fica
-    verificável sem consultar metadado nenhum.
+    O nome carrega o SHA-256 COMPLETO do conteúdo: duas execuções que baixem o mesmo
+    conteúdo não geram duas cópias, e a identidade da captura é verificável sem consultar
+    metadado nenhum.
 
     Devolve o caminho preservado, ou None quando não havia o que preservar — primeira
     ingestão do ano, ou conteúdo idêntico ao que já está em disco.
 
-    O que este função NÃO faz: recuperar capturas que já foram destruídas antes de ela
-    existir. A primeira publicação está ausente do acervo para os documentos já
-    sobrescritos, e nenhuma mudança daqui para a frente muda isso.
+    LEVANTA `OSError` se não conseguir preservar. Isso é deliberado: `baixar_ano` chama esta
+    função ANTES do `replace` que sobrescreve o ZIP corrente, então uma falha aqui aborta a
+    substituição e o acervo fica intacto. Preservação que falha em silêncio é pior que
+    preservação nenhuma, porque dá a impressão de que existe.
+
+    DEFEITO CORRIGIDO EM 2026-09-09, apontado por revisão externa: a primeira versão aceitava
+    um arquivo já existente no caminho de destino SEM conferir o conteúdo. Uma cópia
+    interrompida deixava um arquivo truncado ali, e a execução seguinte o tomava por captura
+    válida, anunciava PRESERVADO e liberava a sobrescrita — perdendo o original. Reproduzido:
+    captura de 5 bytes aceita no lugar de um conteúdo de 51.
+
+    O que esta função NÃO faz: recuperar capturas destruídas antes de ela existir. Para os
+    documentos já sobrescritos, a versão anterior está ausente do acervo.
     """
     destino = Path(destino)
     if not destino.exists():
@@ -105,12 +115,32 @@ def preservar_captura(destino: Path, sha_novo: str) -> Path | None:
 
     capturas = dir_de_capturas(destino)
     capturas.mkdir(parents=True, exist_ok=True)
-    alvo = capturas / f"{destino.stem}__{sha_antigo[:12]}{destino.suffix}"
+    alvo = capturas / f"{destino.stem}__{sha_antigo}{destino.suffix}"
 
-    if not alvo.exists():
-        # copy2 preserva mtime, que é o registro mais próximo de "quando esta captura
-        # entrou". Não é a data de publicação do documento, e não deve ser usada como tal.
-        shutil.copy2(destino, alvo)
+    # Captura já existente só conta se o conteúdo conferir. Um arquivo com o nome certo e
+    # o conteúdo errado é exatamente o modo de falha que esta verificação existe para pegar.
+    if alvo.exists():
+        if sha256_de(alvo) == sha_antigo:
+            return alvo
+        alvo.unlink()
+
+    # Copia para `.part` e só promove ao nome final depois de verificar. Mesmo idioma do
+    # download: ou o nome final tem o conteúdo íntegro, ou não existe.
+    parcial = alvo.with_suffix(alvo.suffix + ".part")
+    try:
+        # copy2 preserva mtime, que é o registro mais próximo de "quando esta captura entrou".
+        # Não é a data de publicação do documento e não deve ser usada como tal.
+        shutil.copy2(destino, parcial)
+        sha_copia = sha256_de(parcial)
+        if sha_copia != sha_antigo:
+            raise OSError(
+                f"captura de {destino.name} saiu corrompida: "
+                f"esperado {sha_antigo[:12]}, obtido {sha_copia[:12]}"
+            )
+        parcial.replace(alvo)
+    except BaseException:
+        parcial.unlink(missing_ok=True)
+        raise
 
     print(f"  [PRESERVADO] captura anterior de {destino.name} -> {alvo.name}")
     return alvo
