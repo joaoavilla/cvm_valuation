@@ -110,10 +110,21 @@ R$ 79.326.000 e R$ 38.967.000 confirmados em documento. → `R-LUC-004`.
 
 ### `R-LUC-002` · `lucro_liquido_controladores`
 **Significado.** Parcela do resultado atribuível aos sócios da controladora.
-**Aplicabilidade.** Só existe em base **CONSOLIDADO**. Uma demonstração individual não tem
-participação de não controladores. `[MEDIDO]`: das 4.529 fichas de base individual, **0** têm
-`pl_minoritarios`, e no BPP as 3.911 linhas de "não controladores" (500 empresas) estão
-**todas** em base consolidada.
+**Aplicabilidade.** Só existe em base **CONSOLIDADO**.
+
+**Fundamentação contábil** (corrigida em 2026-09-09 após revisão externa): numa demonstração
+**individual** o resultado do período pertence aos sócios **daquela entidade** — não há
+consolidação e portanto não há parcela a atribuir a terceiros. É isso que fundamenta a regra,
+e não a ausência das linhas no formulário.
+
+**Evidência do formato observado**, que corrobora sem fundamentar `[MEDIDO]`: das 4.529 fichas
+de base individual, **0** têm `pl_minoritarios`, e no BPP as 3.911 linhas de "não
+controladores" (500 empresas) estão **todas** em base consolidada.
+
+**O que isto NÃO afirma.** Não afirma que demonstração individual e consolidada sejam
+intercambiáveis, nem que "consolidado e controladores coincidem por construção" — formulação
+que este documento usou e que estava errada. São perimetros econômicos diferentes; a base
+publicada continua declarada em `tipo_df` e `R-CTX-002` continua proibindo misturá-los.
 **Resolução.** Linha `.01` do bloco cuja identidade `total = controladores + não controladores`
 fecha, escolhido entre os blocos candidatos. Publicado apenas com
 `status_lucro_controladores = 'IDENTIDADE_OK'`.
@@ -142,9 +153,9 @@ controladores quando consolidada.
 **Fórmula.** `patrimonio_liquido − coalesce(pl_minoritarios, 0)`.
 **Por que o `coalesce` aqui é legítimo, ao contrário dos outros** `[MEDIDO]`: `pl_minoritarios`
 é **não nulo em 6.318 de 6.318** fichas consolidadas — nunca falta onde poderia existir. O
-`coalesce` só atua em base individual, onde o valor correto **é** zero por construção
-(`R-LUC-002`). Não é ausência tratada como zero; é ausência que significa zero, e isso está
-medido, não suposto.
+`coalesce` só atua em base individual, onde não há participação de não controladores a
+subtrair (`R-LUC-002`). Não é ausência tratada como zero: é ausência que, naquele contexto,
+significa zero — e o contexto está declarado em `tipo_df`, não presumido.
 `[PENDENTE]` decidir saldo final contra saldo médio do período.
 
 ---
@@ -239,6 +250,62 @@ relativo dá **1.571**. `[PENDENTE]`
 
 ---
 
+## 6.1 `R-PL-003` — hipótese em investigação, e a correção de um erro meu
+
+**Estado analisado:** commit `93da83b`, árvore limpa, warehouse de 2026-09-08 17:02:04.
+
+### O erro, primeiro
+
+Registrei em 2026-09-08 que **KLABIN 2025** publicava ROE de 21,28% contra 11,65% do total,
+como exemplo de ficha com `pl_minoritarios = 0` reportado. **Está errado nos dois pontos**, e a
+revisão externa o pegou. Medido por mim agora:
+
+| KLABIN 2025 | valor |
+|---|---:|
+| `pl_minoritarios` | **R$ 6.515.155.000** — não é zero |
+| `lucro_liquido_controladores` | NULL (`SPLIT_NAO_INFORMADO`) |
+| `roe` | NULL |
+| `roe_consolidado` | 0,1165335206 |
+
+O número 21,28% existe e é exatamente `1.678.211.000 / 7.885.946.000` — o **ROE de antes da
+correção `R-IND-001`**, lucro total sobre PL dos controladores. Ou seja, ele ilustra o defeito
+do fallback **que já foi corrigido**, e não o defeito patrimonial. A ficha nunca perteceu à
+população de `R-PL-003`.
+
+**Causa do erro:** incorporei ao registro um exemplo trazido por um agente **sem remedi-lo eu
+mesmo**, contrariando a diretriz do próprio checkpoint. O agente mediu o warehouse pré-mudança
+e misturou dois defeitos; eu propaguei.
+
+### A população, essa reproduz `[MEDIDO por mim, 2026-09-09]`
+
+| | fichas |
+|---|---:|
+| consolidadas com `pl_minoritarios = 0` reportado | 2.573 |
+| dessas, a DRE do mesmo contexto declara lucro de não controladores ≠ 0 | **172** |
+| dessas, `IDENTIDADE_OK` (sobrevivem à regra estrita) | **159** |
+| dessas, publicam `roe` hoje | **126** |
+
+Exemplos corretos: **CTEEP 2010** (lucro de não controladores R$ 506,795 mi com
+`pl_minoritarios = 0`; `roe` 6,69% contra `roe_total` 17,80%), SOUZA CRUZ 2010, AES TIETÊ 2015,
+SENDAS 2020, INSPIRALI 2023 e 2025.
+
+### Por que continua sendo hipótese
+
+**Saldo patrimonial no encerramento e resultado atribuído durante o exercício são medidas
+diferentes.** Distribuições, mudanças de participação e outras transações com proprietários
+alteram o saldo final sem contradizer o fluxo — a IAS 1 §106 exige justamente que a
+reconciliação do patrimônio separe resultado abrangente de transações com proprietários. Uma
+compra integral da participação durante o ano produz exatamente esta assinatura **sem que haja
+erro nenhum**.
+
+E **diferença entre `roe` e `roe_total` não mede erro**: são indicadores com componentes
+diferentes por definição.
+
+**Próximo passo:** conferir DMPL e notas de uma amostra das 126 antes de qualquer ação. **Não
+ampliar o veto `CONTRADICAO_DRE_BPP` com base nesta hipótese.**
+
+---
+
 ## 6. Pendências deste contrato
 
 | ID | Pendência | Próximo passo |
@@ -248,7 +315,7 @@ relativo dá **1.571**. `[PENDENTE]`
 | `R-REV-001` | `teve_revisao_material` subconta ~24% e mistura bases | reescrever com a base eleita, 6 conceitos e limiar duplo |
 | `R-LUC-004` | derivação do pai em branco (3 fichas) | aval do mantenedor; altera número publicado |
 | `R-PL-002` | saldo final contra saldo médio no ROE | medir para quantas fichas o médio é calculável |
-| `R-PL-003` | **defeito novo**: 126 fichas publicam ROE com `pl_minoritarios = 0` REPORTADO enquanto a DRE da mesma ficha declara lucro de não controladores ≠ 0. 159 das 172 são `IDENTIDADE_OK` e sobrevivem à regra estrita. Máx. 50,19 pp (KLABIN 2025: 21,28% contra 11,65%) | mesma classe já corrigida em outros pontos: zero reportado tratado como fato quando outro demonstrativo o contradiz |
+| `R-PL-003` | **HIPÓTESE, não defeito comprovado** — ver §6.1 | conferir DMPL e notas antes de qualquer veto |
 | `R-BASE-001` | base degenerada: recuar para a outra base está **descartado como política geral** — a receita individual da CELGPAR é zero em 12 de 13 anos saudáveis e o lucro da CLI SUL diverge −36% a −42%. Para CELGPAR a própria CVM publicou correção em safra posterior | tratar caso a caso por causa, e usar a safra posterior onde ela existe |
 | `R-IND-001` | adoção do contrato (474 margens saem) | aval do mantenedor |
 | §5 | matriz de fontes | concluir antes de qualquer ingestão nova |
