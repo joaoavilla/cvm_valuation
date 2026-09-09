@@ -1,5 +1,16 @@
 # Contratos de conceitos e indicadores
 
+> Fechamento da pré-revisão: as macros públicas são `observacao_vigente_em(relacao, data)`,
+> `observacao_mais_recente(relacao)` e `primeira_observacao_preservada(relacao)`.
+> Todas usam a mesma seleção: datas desconhecidas são inelegíveis, o corte é aplicado
+> antes da janela, e mais de uma observação na data escolhida impede a seleção.
+> Isso inclui valores iguais: não se escolhe uma origem documental arbitrária.
+> Os candidatos continuam em `int_observacoes_periodo`; a auditoria de empates os enumera.
+> Ausência no resultado exige distinguir histórico insuficiente de empate consultando
+> os candidatos. A granularidade é diária, com corte inclusivo; não há garantia intradiária.
+> O piloto não alimenta ainda o mart de indicadores. Preservação de ZIPs não equivale
+> a um histórico completo de manifestos, execuções e incorporações.
+
 Documento canônico de **significado**. Enquanto `AGENTS.md` diz como se trabalha aqui e
 `AUDITORIA_ACURACIA_CHECKPOINT.md` guarda o histórico, este arquivo responde uma pergunta só:
 **o que cada número publicado quer dizer, em qual contexto vale, e quando ele não existe.**

@@ -156,6 +156,23 @@ models:
       recebida DEPOIS da reapresentada, e em 33.485 (0,92%) no mesmo dia.
       `ordem_publicacao = 1` é a primeira observação PRESERVADA NO ACERVO, e não
       necessariamente a primeira publicação da companhia (R-TMP-002).
+    data_tests:
+      # Grão documental: uma linha por observação de um contexto econômico num documento.
+      # `dt_referencia`, `versao` e `ordem_exercicio` identificam o documento; o resto
+      # identifica o contexto. Verificado: 0 duplicados.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cd_cvm
+              - tipo_df
+              - demonstrativo
+              - cd_conta
+              - ds_conta
+              - dt_inicio_exercicio
+              - dt_fim_exercicio
+              - dt_referencia
+              - versao
+              - ordem_exercicio
     columns:
       - name: dt_recebimento
         description: Data em que o documento ficou público. É o eixo da seleção temporal.

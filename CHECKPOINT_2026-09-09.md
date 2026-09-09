@@ -1,5 +1,11 @@
 # Checkpoint — janela de 2026-09-08/09
 
+> Atualização de fechamento: consulte `PR_REVISAO_FINAL.md` para o resultado da
+> validação final. As contagens abaixo documentam o checkpoint anterior.
+> Os dois P1 foram corrigidos: corte anterior à janela e captura verificada/atômica.
+> Empates temporais agora impedem seleção em todas as políticas, incluindo valores
+> iguais. A resolução desses candidatos e a integração ao painel seguem pendentes.
+
 Ponto de retomada **compacto e autossuficiente**. Quem chegar aqui não precisa de histórico de
 conversa. Os três documentos que este aponta são a leitura obrigatória, nesta ordem:
 
