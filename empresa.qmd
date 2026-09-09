@@ -31,8 +31,8 @@ def num(x, casas=2):
 
 | Indicador | Controladores | Consolidado | Percentil do mercado |
 |---|---:|---:|---:|
-| Margem líquida | `{python} pct(ult.margem_liquida)` | `{python} pct(ult.margem_liquida_consolidada)` | `{python} pct(ult.pct_margem_liquida, 0)` |
-| ROE | `{python} pct(ult.roe)` | `{python} pct(ult.roe_consolidado)` | `{python} pct(ult.pct_roe, 0)` |
+| Margem líquida | `{python} pct(ult.margem_liquida)` | `{python} pct(ult.margem_liquida_total)` | `{python} pct(ult.pct_margem_liquida, 0)` |
+| ROE | `{python} pct(ult.roe)` | `{python} pct(ult.roe_total)` | `{python} pct(ult.pct_roe, 0)` |
 | Margem bruta | `{python} pct(ult.margem_bruta)` | | |
 | Margem EBIT | `{python} pct(ult.margem_ebit)` | | |
 | Liquidez corrente | `{python} num(ult.liquidez_corrente)` | | `{python} pct(ult.pct_liquidez, 0)` |
