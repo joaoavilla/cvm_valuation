@@ -428,11 +428,55 @@ derivado as (
         p.lucro_liquido_controladores                              as lucro_liquido_controladores_fonte,
 
         patrimonio_liquido - coalesce(pl_minoritarios, 0)          as patrimonio_liquido_controladores,
-        coalesce(divida_bruta_circulante, 0)
-            + coalesce(divida_bruta_nao_circulante, 0)             as divida_bruta,
-        coalesce(divida_bruta_circulante, 0)
-            + coalesce(divida_bruta_nao_circulante, 0)
-            - coalesce(caixa_e_equivalentes, 0)                    as divida_liquida
+
+        -- ------------------------------------------------------------------------------
+        -- R-DIV-001 -- divida bruta e liquida: ausencia deixa de virar zero.
+        --
+        -- Ate 2026-09-09 as duas eram somas de `coalesce(componente, 0)`, entao uma ficha
+        -- sem NENHUM componente publicava `divida_bruta = 0` -- "nao sei" apresentado como
+        -- "nao tem divida". Medido no commit 93da83b, warehouse de 2026-09-08 17:02:04:
+        -- 650 fichas de 10.847 nao tem nenhum dos dois componentes e recebiam zero, e
+        -- 617 delas sao instituicoes financeiras, que simplesmente nao usam estas contas.
+        -- Outras 640 publicavam `alavancagem` calculada sobre essa divida inexistente.
+        --
+        -- Ausencia PARCIAL tambem nao produz total: um componente sozinho nao e a divida
+        -- bruta. Nada se perde ao recusa-lo, porque `divida_bruta_circulante` e
+        -- `divida_bruta_nao_circulante` continuam publicados em colunas proprias. Hoje o
+        -- caso tem 0 ocorrencias -- a regra existe para nao depender disso.
+        --
+        -- Zero EFETIVAMENTE REPORTADO continua sendo zero: a distincao e entre componente
+        -- ausente e componente presente valendo zero, e ela agora e feita.
+        -- ------------------------------------------------------------------------------
+        case
+            when divida_bruta_circulante is null
+              or divida_bruta_nao_circulante is null                then null
+            else divida_bruta_circulante + divida_bruta_nao_circulante
+        end                                                        as divida_bruta,
+
+        case
+            when divida_bruta_circulante is not null
+             and divida_bruta_nao_circulante is not null            then 'COMPLETA'
+            when divida_bruta_circulante is null
+             and divida_bruta_nao_circulante is null                then 'AUSENTE'
+            else 'PARCIAL'
+        end                                                        as status_divida_bruta,
+
+        -- Divida liquida exige tambem caixa valido: subtrair um caixa ausente tratado como
+        -- zero devolveria a divida bruta com outro nome. 317 fichas nao tem caixa mapeado.
+        case
+            when divida_bruta_circulante is null
+              or divida_bruta_nao_circulante is null
+              or caixa_e_equivalentes is null                       then null
+            else divida_bruta_circulante + divida_bruta_nao_circulante
+                 - caixa_e_equivalentes
+        end                                                        as divida_liquida,
+
+        case
+            when divida_bruta_circulante is null
+              or divida_bruta_nao_circulante is null                then 'DIVIDA_INDISPONIVEL'
+            when caixa_e_equivalentes is null                       then 'SEM_CAIXA'
+            else 'COMPLETA'
+        end                                                        as status_divida_liquida
 
     from pivotado as p
 
@@ -495,7 +539,7 @@ final as (
         --   BASE_DEGENERADA       0 /   0  (ja eram nulas)
         --
         -- Quem quiser o resultado consolidado tem coluna propria e com nome inequivoco:
-        -- `margem_liquida_consolidada` e `roe_consolidado`.
+        -- `margem_liquida_total` e `roe_total`.
         -- ------------------------------------------------------------------------------
         case
             when tipo_df = 'INDIVIDUAL' then lucro_liquido
@@ -509,7 +553,7 @@ select
     * exclude (lucro_atribuivel),
 
     lucro_atribuivel  / nullif(receita_liquida, 0)                   as margem_liquida,
-    lucro_liquido     / nullif(receita_liquida, 0)                   as margem_liquida_consolidada,
+    lucro_liquido     / nullif(receita_liquida, 0)                   as margem_liquida_total,
     lucro_bruto       / nullif(receita_liquida, 0)                   as margem_bruta,
     ebit              / nullif(receita_liquida, 0)                   as margem_ebit,
     -- Retorno sobre patrimônio negativo não é retorno: o sinal do quociente passa a
@@ -521,11 +565,16 @@ select
     case when patrimonio_liquido_controladores > 0
          then lucro_atribuivel / patrimonio_liquido_controladores end as roe,
     case when patrimonio_liquido > 0
-         then lucro_liquido / patrimonio_liquido end                  as roe_consolidado,
+         then lucro_liquido / patrimonio_liquido end                  as roe_total,
     lucro_liquido     / nullif(ativo_total, 0)                       as roa,
     ativo_circulante  / nullif(passivo_circulante, 0)                as liquidez_corrente,
-    (ativo_circulante - coalesce(estoques, 0))
-                      / nullif(passivo_circulante, 0)                as liquidez_seca,
+    -- R-DIV-002 -- liquidez seca so existe com estoques conhecidos. Com
+    -- `coalesce(estoques, 0)` ela virava uma copia silenciosa da liquidez corrente: medido,
+    -- 650 fichas nao tem estoques e 284 delas publicavam as duas colunas com o MESMO valor,
+    -- sem nada indicando que uma nao era o que dizia ser.
+    case when estoques is not null
+         then (ativo_circulante - estoques) / nullif(passivo_circulante, 0)
+    end                                                              as liquidez_seca,
     -- Mesma razão: dívida líquida sobre PL negativo devolve alavancagem NEGATIVA
     -- justamente para as empresas mais endividadas, que é a leitura oposta da verdadeira.
     case when patrimonio_liquido_controladores > 0

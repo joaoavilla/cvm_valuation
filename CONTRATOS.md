@@ -73,9 +73,9 @@ fechada, e a resposta não é "a diferença é irrelevante":
 
 - **9.517 de 10.847 fichas (87,7%)** existem em mais de uma safra. Destas, **3.663 (38,5%)**
   têm diferença material em algum conceito mapeado e **1.571 (16,5%)** em conceito central.
-- **Todos os 12 indicadores se mexem.** `margem_liquida_consolidada` muda em **980 de 7.770**
+- **Todos os 12 indicadores se mexem.** `margem_liquida_total` muda em **980 de 7.770**
   fichas comparáveis (12,6%), 387 por mais de 1 pp e **26 trocam de sinal**.
-  `roe_consolidado` muda em 762 de 8.312 (9,2%), 33 trocam de sinal.
+  `roe_total` muda em 762 de 8.312 (9,2%), 33 trocam de sinal.
 - **O caso que encerra a discussão: AMERICANAS 2021.** O mart publica hoje margem consolidada
   de **+2,40%** com status `IDENTIDADE_OK`; na safra seguinte a mesma ficha aparece com
   **−27,70%** — um lucro de R$ 543,795 mi virou prejuízo de R$ 6,237 bi. CSN 2015: +10,54%
@@ -192,9 +192,11 @@ base consolidada em que a substituição muda o significado:
 | CONSOLIDADO | `BASE_DEGENERADA` | 0 (já nulas) |
 | **total** | | **474** |
 
-### `R-IND-002` · `margem_liquida_consolidada`
-**Significado.** Resultado consolidado, **incluindo** a parcela dos não controladores, sobre a
-receita líquida. Conceito próprio, não é substituto de `R-IND-001`.
+### `R-IND-002` · `margem_liquida_total`
+**Significado.** Resultado **total da base publicada** sobre a receita líquida — inclui a
+parcela dos não controladores quando a base é consolidada. Conceito próprio, não é substituto
+de `R-IND-001`. **Renomeada em 2026-09-09**: `margem_liquida_consolidada` era impreciso, já
+que a fórmula usa o lucro total da base SELECIONADA e em 4.529 fichas ela é INDIVIDUAL.
 Numerador: `lucro_liquido`. Denominador: `receita_liquida`.
 
 ### `R-IND-003` · `roe`
@@ -208,7 +210,7 @@ Alcance da adoção `[MEDIDO]`: saem **451** (367 + 74 + 10 + 0), não 4.254. A 
 margem (474) vem de receita nula em financeiras e de patrimônio não positivo.
 `[PENDENTE]` saldo final ou médio.
 
-### `R-IND-004` · `roe_consolidado`
+### `R-IND-004` · `roe_total`
 Resultado consolidado sobre patrimônio líquido total, este último só quando positivo.
 
 ---
@@ -227,11 +229,11 @@ projeto precisa: **nenhuma, para o que ele já publica.**
 | Indicador | Componentes | Cobertura | Lacuna | Temporalidade |
 |---|---|---|---|---|
 | `margem_liquida` | lucro atribuível (R-IND-001); `receita_liquida` | **8.333 (76,8%)** · fin **0/620** | 620 financeiras sem receita mapeada (decisão 3.01×3.03); 1.377 não-fin com receita = 0 indistinguível de não mapeada; 532 consolidadas sem split resolvido | **980/7.770 (12,6%)**, 387 >1pp, **26 ±** |
-| `margem_liquida_consolidada` | `lucro_liquido`; `receita_liquida` | 8.807 (81,2%) · fin 0/620 | idem, menos a de split | 980/7.770, 387 >1pp, 26 ± |
+| `margem_liquida_total` | `lucro_liquido`; `receita_liquida` | 8.807 (81,2%) · fin 0/620 | idem, menos a de split | 980/7.770, 387 >1pp, 26 ± |
 | `margem_bruta` | `lucro_bruto`; `receita_liquida` | 8.807 (81,2%) · fin 0/620 | conceito não existe no plano FINANCEIRO/SEGURADORA | 956/7.770, 476 >1pp, 11 ± |
 | `margem_ebit` | `ebit`; `receita_liquida` | 8.806 (81,2%) · fin 0/620 | EBIT nulo em 614/620 financeiras — não é lacuna, é inaplicabilidade | move |
 | `roe` | lucro atribuível; `patrimonio_liquido_controladores` > 0 | **9.002 (83,0%)** | PL não positivo; split não resolvido | move |
-| `roe_consolidado` | `lucro_liquido`; `patrimonio_liquido` > 0 | 9.453 (87,1%) | PL não positivo | 762/8.312 (9,2%), **33 ±** |
+| `roe_total` | `lucro_liquido`; `patrimonio_liquido` > 0 | 9.453 (87,1%) | PL não positivo | 762/8.312 (9,2%), **33 ±** |
 | `cobertura_juros` | `ebit`; `despesas_financeiras` | — | — | 1.145/8.119, **920 >1pp** |
 | `divida_bruta`, `divida_liquida` | `divida_bruta_*`, `caixa_e_equivalentes` | "100%" **falsa** | ver `R-DIV-001` | move |
 
@@ -265,7 +267,7 @@ revisão externa o pegou. Medido por mim agora:
 | `pl_minoritarios` | **R$ 6.515.155.000** — não é zero |
 | `lucro_liquido_controladores` | NULL (`SPLIT_NAO_INFORMADO`) |
 | `roe` | NULL |
-| `roe_consolidado` | 0,1165335206 |
+| `roe_total` | 0,1165335206 |
 
 O número 21,28% existe e é exatamente `1.678.211.000 / 7.885.946.000` — o **ROE de antes da
 correção `R-IND-001`**, lucro total sobre PL dos controladores. Ou seja, ele ilustra o defeito

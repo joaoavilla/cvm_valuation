@@ -277,7 +277,7 @@ decisão, para que "por que este número?" se responda sem reconstruir conversa.
 
 ### Etapa 2 — Aplicar o contrato onde ele já contradiz o código `[DECISÃO]`
 `margem_liquida` e `roe` passam a ser estritos: NULL quando o componente contratado falta.
-`margem_liquida_consolidada` e `roe_consolidado` continuam sendo as versões consolidadas.
+`margem_liquida_total` e `roe_total` continuam sendo as versões com o resultado total da base.
 
 **Alcance medido: 3.544 fichas perdem `margem_liquida`** e passam a depender da coluna
 consolidada. Muda números publicados — **é decisão do mantenedor**, não minha.

@@ -47,7 +47,7 @@ A maior parte dos consumidores desse dado ignora a distinção - inclusive a ver
 
 **O mart tem grão `(empresa, fim do exercício)`, não `(empresa, ano)`.** Vinte empresas mudaram o fim do exercício social e têm dois fechamentos no mesmo ano civil.
 
-**Margem e ROE usam a base dos controladores, não a consolidada.** O lucro dos minoritários pertence a terceiros dentro de subsidiárias, não a quem compra a ação — é a convenção dos sites de fundamentos. As versões consolidadas ficam em colunas próprias (`margem_liquida_consolidada`, `roe_consolidado`), porque o número não existe sem a definição. Validado contra fonte externa: a margem da WEG bate ao centésimo em 2021–2025.
+**Margem e ROE usam a base dos controladores, não a consolidada.** O lucro dos minoritários pertence a terceiros dentro de subsidiárias, não a quem compra a ação — é a convenção dos sites de fundamentos. As versões com o resultado total da base ficam em colunas próprias (`margem_liquida_total`, `roe_total`), porque o número não existe sem a definição. Validado contra fonte externa: a margem da WEG bate ao centésimo em 2021–2025.
 
 ---
 
