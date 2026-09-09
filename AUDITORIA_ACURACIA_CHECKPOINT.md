@@ -1,7 +1,10 @@
 # Auditoria de acurácia — estado, diretrizes e fila de trabalho
 
-Documento único de continuidade da branch `fix/auditoria-acuracia-independente`.
+Documento de continuidade da branch `fix/auditoria-acuracia-independente` — **o histórico**.
 Escrito para que uma sessão nova continue **sem depender de histórico de chat**.
+
+> **Comece por `CHECKPOINT_2026-09-09.md`**, na raiz: é o resumo compacto do estado atual
+> e o direcionamento. Este arquivo é o registro longo, para quando o resumo não bastar.
 
 - **Parte I** — reconstrução forense da auditoria de 2026-09-06, interrompida por limite de sessão
 - **Parte II** — o que a sessão de 2026-09-07 fez
