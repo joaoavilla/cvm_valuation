@@ -5,6 +5,7 @@ disco de forma confiável. Não interpreta nada do conteúdo — isso é do extr
 """
 
 import hashlib
+import shutil
 import zipfile
 from pathlib import Path
 
@@ -63,10 +64,56 @@ def baixar_ano(ano: int, destino: Path) -> Path:
         parcial.unlink(missing_ok=True)
         raise ValueError(f"[{ano}] o download não é um ZIP válido: {url}")
 
+    # Antes de sobrescrever, preserva a captura anterior se o conteúdo mudou.
+    # Sem isto, cada execução destrói a única cópia do que a CVM dizia antes — e já se
+    # sabe que a CVM reescreve: o manifesto de 2024 registra `mudou_vs_anterior: true`,
+    # com o ZIP anterior perdido. 22,4% dos documentos do acervo têm `versao > 1`.
+    preservar_captura(destino, sha256_de(parcial))
+
     # rename dentro do mesmo sistema de arquivos: operação atômica.
     # Ou o destino tem o arquivo íntegro, ou não tem nada. Nunca meio termo.
     parcial.replace(destino)
     return destino
+
+
+def dir_de_capturas(destino: Path) -> Path:
+    """Onde as capturas anteriores ficam: `_capturas/` ao lado dos ZIPs correntes."""
+    return Path(destino).parent / "_capturas"
+
+
+def preservar_captura(destino: Path, sha_novo: str) -> Path | None:
+    """Arquiva o ZIP que está prestes a ser sobrescrito, quando o conteúdo mudou.
+
+    O nome do arquivo preservado carrega o hash do CONTEÚDO, não a data: duas execuções
+    que baixem o mesmo conteúdo não geram duas cópias, e a identidade da fonte fica
+    verificável sem consultar metadado nenhum.
+
+    Devolve o caminho preservado, ou None quando não havia o que preservar — primeira
+    ingestão do ano, ou conteúdo idêntico ao que já está em disco.
+
+    O que este função NÃO faz: recuperar capturas que já foram destruídas antes de ela
+    existir. A primeira publicação está ausente do acervo para os documentos já
+    sobrescritos, e nenhuma mudança daqui para a frente muda isso.
+    """
+    destino = Path(destino)
+    if not destino.exists():
+        return None
+
+    sha_antigo = sha256_de(destino)
+    if sha_antigo == sha_novo:
+        return None
+
+    capturas = dir_de_capturas(destino)
+    capturas.mkdir(parents=True, exist_ok=True)
+    alvo = capturas / f"{destino.stem}__{sha_antigo[:12]}{destino.suffix}"
+
+    if not alvo.exists():
+        # copy2 preserva mtime, que é o registro mais próximo de "quando esta captura
+        # entrou". Não é a data de publicação do documento, e não deve ser usada como tal.
+        shutil.copy2(destino, alvo)
+
+    print(f"  [PRESERVADO] captura anterior de {destino.name} -> {alvo.name}")
+    return alvo
 
 
 def sha256_de(caminho: Path) -> str:

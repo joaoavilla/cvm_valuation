@@ -248,32 +248,48 @@ saída verificável. **Estado analisado carimbado em toda medição**: commit, e
 | 3 | **Sanear registros** — `R-PL-003` a hipótese, Klabin reconciliada, linguagem da base individual, nomes das versões "consolidadas" | ✅ `2f0ab7b` + `c231c3b` |
 | 4 | **Corrigir a dívida e seus consumidores** | ✅ `c231c3b` |
 | 5 | **Fechar a seleção temporal** | ✅ contrato em `18c4cf6`; **duas lacunas do acervo ficam pendentes** |
-| 6 | **CELGPAR como piloto de recuperação temporal** | ⏸ **bloqueado** — ver abaixo |
+| 6 | **CELGPAR como piloto de seleção temporal** | ✅ executada — ver abaixo |
 | 7 | Demais bases zeradas e investigação patrimonial | pendente |
 | 8 | Extrair a resolução para antes do pivot; depois generalizar por família | pendente |
 
-### Por que a CELGPAR está bloqueada, e não apenas não-feita
+### CELGPAR — executada como caso delimitado
 
-A recuperação por safra posterior exige, por `R-TMP-005`, que o valor entre com **data de
-publicação, data de coleta e data de incorporação**, preservando a observação anterior. Duas
-dessas não existem hoje:
+A conclusão anterior de que a CELGPAR estava "bloqueada" era **ampla demais**, e a terceira
+revisão externa corrigiu: não é preciso reconstruir todo o histórico perdido para registrar
+corretamente uma observação corretiva que **já temos**.
 
-- **data de incorporação não é registrada** em lugar nenhum do pipeline (`R-TMP-003`);
-- **a primeira publicação é irrecuperável para 22,4% das fichas** (`R-TMP-002`), porque o
-  acervo guarda apenas a versão corrente de cada documento.
+E de fato as duas observações já estão no acervo, com data pública:
 
-Executar a recuperação antes disso produziria exatamente o que `R-TMP-005` proíbe: um valor
-corretivo aparecendo como se sempre tivesse estado lá. A ordem correta é implementar a data de
-incorporação, e só então a CELGPAR.
+| Documento | Público em | `3.01` | `3.11` |
+|---|---|---:|---:|
+| `2023-12-31` v1 | **2024-03-27** | 0 | 0 |
+| `2024-12-31` v2 | **2025-04-02** | 28.735.000 | 48.731.000 |
 
-### O que a Etapa 5 deixou pronto e o que deixou em aberto
+Comportamento da seleção `vigente_em`, medido:
 
-Pronto: a distinção entre as duas leituras, a medição de que elas divergem em 12,6% dos
-indicadores com 26 trocas de sinal, e a regra de que recuperação não retroage.
+| Consulta em | Resultado |
+|---|---|
+| 2024-01-01 | *histórico insuficiente* — o documento ainda não era público |
+| 2024-06-30 e **2025-04-01** | **0** — só o documento original era público |
+| 2025-06-30 e hoje | **28.735.000 / 48.731.000** |
 
-Em aberto, e **antes de qualquer reingestão**: arquivar cada download. Enquanto isso não
-existir, cada `python -m ingestion` destrói a única cópia do que a CVM dizia antes — e já se
-sabe que 22,4% dos documentos foram refeitos.
+O valor corretivo **não aparece** em consulta anterior a 2025-04-02. Travado em
+`assert_selecao_temporal`.
+
+`mart_fundamentos_anuais` continua publicando a leitura do próprio exercício, com
+`BASE_DEGENERADA` sinalizando as 7 fichas. Trocar o que o mart publica é decisão de produto e
+segue pendente — o que esta etapa entrega é a **capacidade de responder as duas perguntas**,
+que antes não existia.
+
+### O que ficou pendente, e por quê
+
+- **Arquivar o acervo atual** — a preservação automática já está no código
+  (`preservar_captura`), mas ela só protege dali para a frente. Copiar os 16 ZIPs atuais para
+  um local seguro é ação operacional do mantenedor, não do pipeline.
+- **Data de incorporação ao warehouse** — `ingerido_em` do manifesto registra quando o ZIP foi
+  ingerido, e não quando cada valor entrou no warehouse ou foi publicado. As três camadas
+  agora estão distinguidas em `R-TMP-003`; a terceira continua sem registro.
+- **Recuperação externa das versões ausentes** — o RAD da CVM não foi consultado.
 
 ## 4. Registros canônicos
 
