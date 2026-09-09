@@ -590,6 +590,23 @@ por proposta prestes a virar código, e **2 derrubaram a proposta**.
 - Persista o resultado em **arquivo do repositório** ao fim de cada lote. O `result` de
   workflow é temporário: 8,5 M de tokens de trabalho quase se perderam por isso.
 
+## Carimbe o estado analisado em toda medição
+
+Adotado em 2026-09-09, por pedido da revisão externa. Toda medição registrada declara:
+**commit**, **estado da árvore**, e **mtime do warehouse**. Sem isso, um número medido é
+irreproduzível — foi exatamente assim que o exemplo da KLABIN entrou errado no registro: o
+agente mediu o warehouse pré-correção, e o número virou "defeito" numa seção que falava de
+outro defeito.
+
+```
+commit: $(git rev-parse --short HEAD)  |  árvore: N alterações
+warehouse mtime: AAAA-MM-DD HH:MM:SS
+```
+
+E a regra que dela decorre: **re-meça você mesmo a alegação central que um agente trouxer,
+antes de escrevê-la no registro.** Esta diretriz já existia; ela foi violada e custou uma
+correção pública.
+
 ## Não reconstrua o warehouse enquanto agentes medem
 
 Erro cometido em 2026-09-08 e registrado para não se repetir. Dois refutadores foram lançados
