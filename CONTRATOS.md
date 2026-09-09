@@ -89,8 +89,13 @@ select n_versoes, count(*) documentos from (
 
 Ou seja: em **22,4% das fichas**, o que chamamos de "safra original" é a versão **corrente** do
 documento daquele exercício, que **já pode conter correções feitas depois**. A versão
-originalmente publicada está perdida — os arquivos em massa da CVM só carregam a versão
-vigente, e a ingestão sobrescreve o raw (defeito A1 do histórico).
+originalmente publicada está **ausente do acervo atual** — os arquivos em massa da CVM só
+carregam a versão vigente, e até 2026-09-09 a ingestão sobrescrevia o ZIP anterior.
+
+**"Ausente do acervo" não é "irrecuperável"**, e a distinção importa: nenhuma investigação de
+recuperação por outras fontes foi feita. O sistema RAD da CVM mantém os documentos por
+`ID_DOCUMENTO` e versão, e não foi consultado. Afirmar impossibilidade sem tentar seria o
+mesmo erro que este documento já cometeu duas vezes nesta auditoria.
 
 **Correção de uma afirmação minha.** Eu havia registrado que "`versao` não é um terceiro eixo,
 porque 0 de 492.814 chaves têm mais de uma versão com valor divergente". A conclusão não se
@@ -119,8 +124,38 @@ lacunas acima são pré-requisito de qualquer recuperação por safra posterior.
   R$ 543,795 mi virou prejuízo de R$ 6,237 bi. CSN 2015: +10,54% contra −7,97%.
 
 Um backtest que use a série reapresentada como se fosse conhecida na época **está olhando o
-futuro**. Publicar a leitura do próprio exercício é a escolha certa; a outra precisa existir com
-nome próprio, não substituir esta.
+futuro**.
+
+**Mas a leitura do próprio exercício, sozinha, também não garante ausência de informação
+futura** — correção pedida pela terceira revisão externa, e ela está certa. Duas razões,
+ambas medidas:
+
+- para 22,4% das fichas a leitura vem da versão **corrente** do documento, que pode já
+  incorporar correções posteriores (`R-TMP-002`);
+- em **20.145 contextos (0,55%)** a observação marcada como "original" foi **recebida depois**
+  da reapresentada, e em outros 33.485 (0,92%) no mesmo dia.
+
+`safra_original` é uma **visão útil**, não um selo de anterioridade. Uso histórico depende da
+data de publicação da versão efetivamente selecionada, e para isso existe `R-TMP-007`.
+
+### `R-TMP-007` · seleção por data, implementada `[MEDIDO 2026-09-09]`
+
+`int_observacoes_periodo` expõe **todas** as observações de um mesmo período econômico,
+ordenadas por `dt_recebimento` — o único eixo temporal completo do acervo, preenchido em
+**8.563.240 de 8.563.240 linhas (100%)**. Três políticas, e nenhuma substitui a outra:
+
+| Política | Pergunta que responde |
+|---|---|
+| `vigente_em(data)` | o que estava público naquela data — a única adequada a backtest |
+| mais recente | o que se sabe hoje |
+| primeira preservada | a primeira observação **do acervo**, que pode não ser a primeira publicação |
+
+**Critério decisivo, e ele é testado:** *uma consulta anterior à publicação de uma correção
+nunca pode selecionar o valor corretivo.* Quando o acervo não alcança a data perguntada, a
+resposta é **histórico insuficiente** — e não o valor mais próximo.
+
+Data desconhecida permanece desconhecida: `dt_recebimento` nulo nunca é presumido e a
+observação simplesmente não é elegível para pergunta histórica.
 
 ### `R-TMP-005` · recuperação documental não reescreve o passado
 

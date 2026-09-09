@@ -146,3 +146,24 @@ models:
           Regra de leitura consolidada, também tri-state. true = mesmo conceito
           confirmado ou descrição cosmeticamente equivalente. false = troca de
           conceito provada. NULL = indeterminado.
+
+  - name: int_observacoes_periodo
+    description: >
+      R-TMP-007. Todas as observações de um mesmo período econômico, ordenadas pela data em
+      que ficaram públicas (`dt_recebimento`, preenchido em 100% das 8.563.240 linhas).
+      Existe porque `safra_original` diz a posição do exercício DENTRO do documento e não
+      ordena o tempo: em 20.145 contextos (0,55%) a observação marcada como "original" foi
+      recebida DEPOIS da reapresentada, e em 33.485 (0,92%) no mesmo dia.
+      `ordem_publicacao = 1` é a primeira observação PRESERVADA NO ACERVO, e não
+      necessariamente a primeira publicação da companhia (R-TMP-002).
+    columns:
+      - name: dt_recebimento
+        description: Data em que o documento ficou público. É o eixo da seleção temporal.
+        data_tests:
+          - not_null
+      - name: ordem_publicacao
+        data_tests:
+          - not_null
+      - name: valor
+        description: >
+          NULL quando `status_valor <> 'OK'` — a quarentena sobe do staging sem alteração.
