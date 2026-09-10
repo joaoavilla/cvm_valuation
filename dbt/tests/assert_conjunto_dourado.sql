@@ -75,6 +75,22 @@ comparado as (
 
     where d.status = 'TRAVA'
 
+      -- Universo restrito às empresas que EXISTEM no mart.
+      --
+      -- No build completo isso não muda nada: as 37 empresas do conjunto dourado estão
+      -- todas lá. No CI muda tudo, porque o dado é uma amostra de 7 empresas (decisão D5) e
+      -- só 3 delas têm ficha no conjunto dourado — sem este filtro, 166 das 189 TRAVA
+      -- reprovavam por AUSÊNCIA DA EMPRESA, que é propriedade da amostra e não regressão.
+      --
+      -- O que continua reprovando, e é o que o teste existe para pegar: ficha ausente de
+      -- empresa PRESENTE, valor nulo, e valor fora da tolerância. No CI isso são 23
+      -- afirmações reais sobre WEG, Petrobras e Banco do Brasil — bem mais do que o
+      -- `severity: warn` que o repositório usa em `assert_seed_contas_existe_no_dado`
+      -- daria, e por isso a severidade aqui continua `error` nos dois ambientes.
+      and exists (
+          select 1 from mart_longo as presente where presente.cd_cvm = d.cd_cvm
+      )
+
 )
 
 select *
