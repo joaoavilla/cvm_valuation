@@ -42,6 +42,8 @@ EMPRESAS = {
     "006629": "Hercules: descricao corrompida ('0') em 2010-2012, aciona o WARN",
     "019364": "Itapebi: excecao da identidade contabil (PL fora do Passivo Total)",
     "026557": "Datora: a outra excecao da identidade contabil",
+    "021393": "CELGPAR: consolidado zerado na fonte em 2022-2023 e corrigido na safra "
+              "seguinte -- e o caso que prova a selecao temporal (assert_selecao_temporal)",
 }
 
 
