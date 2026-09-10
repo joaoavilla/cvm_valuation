@@ -23,3 +23,11 @@ Thumbs.db
 .vscode/
 /.quarto/
 **/*.quarto_ipynb
+
+# Ferramentas de agente (IA)
+# Versionados de propósito: AGENTS.md, CLAUDE.md, .claude/settings.json, .claude/skills/
+# — são contexto do projeto e devem acompanhar o clone.
+.claude/settings.local.json
+.claude/.user.json
+.codex/state/
+.aider*

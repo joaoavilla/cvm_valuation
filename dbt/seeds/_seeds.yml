@@ -87,3 +87,84 @@ seeds:
               - demonstrativo
               - cd_conta
               - ds_conta
+
+  - name: conjunto_dourado
+    description: >
+      Valores conferidos contra fonte externa (20-F e demonstração auditada, release da
+      empresa, agregador). É a única prova de CORREÇÃO que o projeto tem — o resto da suíte
+      prova apenas consistência interna. Consumido por `assert_conjunto_dourado`.
+
+      36 empresas, 233 fichas, exercícios de 2011 a 2025, levantadas em 2026-09-06.
+      Ampliar pela skill `validar-externo`; toda divergência confirmada entra aqui ANTES
+      da correção, para que o teste falhe, a correção o faça passar e a regressão fique
+      impedida.
+
+    config:
+      column_types:
+        cd_cvm: varchar
+        ano: integer
+        valor_esperado: double
+        tolerancia_rel: double
+
+    columns:
+      - name: cd_cvm
+        description: "Código CVM da companhia, com zeros à esquerda."
+        data_tests:
+          - not_null
+
+      - name: ano
+        description: "Exercício social, casado com `ano_exercicio` do mart."
+        data_tests:
+          - not_null
+
+      - name: conceito
+        description: "Nome da coluna do mart que a linha confere."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - ativo_total
+                  - patrimonio_liquido
+                  - receita_liquida
+                  - lucro_liquido
+                  - lucro_liquido_controladores
+
+      - name: valor_esperado
+        description: "Valor da fonte externa, em reais, sem arredondar."
+        data_tests:
+          - not_null
+
+      - name: tolerancia_rel
+        description: >
+          Tolerância RELATIVA, nunca absoluta — o valor absoluto varia com a formatação da
+          fonte. Padrão 0,001 (0,1%); 0,005 apenas nas fontes que publicam arredondado.
+        data_tests:
+          - not_null
+
+      - name: status
+        description: >
+          TRAVA = o mart tem de bater (é o que reprova) ·
+          DEFEITO_ABERTO = divergência confirmada, ainda não corrigida, causa em `observacao` ·
+          DIVERGENCIA_FONTE = o mart está certo e a fonte mede outra coisa.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['TRAVA', 'DEFEITO_ABERTO', 'DIVERGENCIA_FONTE']
+
+      - name: fonte_url
+        description: "Endereço consultado. Registrado porque agregador reformata número conforme a consulta."
+        data_tests:
+          - not_null
+
+      - name: observacao
+        description: "Citação literal da fonte e, nos defeitos abertos, a causa medida."
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cd_cvm
+              - ano
+              - conceito

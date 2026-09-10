@@ -15,7 +15,11 @@ models:
               - dt_fim_exercicio
               - tipo_df
               - cd_conta
+              - ds_conta
               - dt_referencia
+              - versao
+              - ordem_exercicio
+              - dt_inicio_exercicio
 
       # Um fato econômico não pode terminar depois
       # da safra documental em que foi reportado.
@@ -64,6 +68,16 @@ models:
           arguments:
             expression: "not (flag_financeira and margem_liquida is not null)"
 
+      # As colunas `fin_*` são projeções fiéis da conta da CVM e não podem virar
+      # `receita_liquida` por acidente: as duas definições não são a mesma coisa e
+      # a conta certa para receita de banco ainda não foi decidida por medição
+      # (ver o comentário do bloco financeiro em mart_fundamentos_anuais.sql).
+      # Hoje o invariante vale; este teste impede que uma expansão futura do seed
+      # o quebre em silêncio.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not (flag_financeira and receita_liquida is not null)"
+
       - dbt_utils.expression_is_true:
           arguments:
             expression: "ano_exercicio = year(dt_fim_exercicio)"
@@ -73,6 +87,68 @@ models:
             expression: "roe is null or abs(roe) < 100"
           config:
             severity: warn
+
+      # Razão sobre patrimônio não positivo não é indicador: o sinal do quociente passa a
+      # depender do sinal do denominador. Antes da correção, 1.145 fichas de 299 empresas
+      # publicavam ROE POSITIVO para empresa com prejuízo, só porque o PL era negativo.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not (roe is not null and patrimonio_liquido_controladores <= 0)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not (roe_total is not null and patrimonio_liquido <= 0)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not (alavancagem is not null and patrimonio_liquido_controladores <= 0)"
+
+      # Margem exatamente zero com lucro diferente de zero é a assinatura do defeito do
+      # bloco de atribuição: a linha 3.x.01 vinha zerada e era lida ao pé da letra.
+      # Eram 390 fichas; a resolução por identidade deixou 1, que fica visível como WARN
+      # em vez de sumir. Se voltar a crescer, a regra de resolução parou de cobrir um caso.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not (margem_liquida = 0 and lucro_liquido <> 0)"
+          config:
+            severity: warn
+
+      # R-IND-001: em base consolidada, margem e ROE só existem com o lucro dos controladores
+      # validado. Este teste é o que impede o `coalesce` de voltar: se alguém reintroduzir o
+      # fallback, 474 margens e 451 ROEs reaparecem em base consolidada e o build reprova.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: >
+              not (
+                tipo_df = 'CONSOLIDADO'
+                and lucro_liquido_controladores is null
+                and (margem_liquida is not null or roe is not null)
+              )
+
+      # R-DIV-001 e R-DIV-002: nenhum total pode existir sem os componentes que o compõem.
+      # São estes três testes que impedem o `coalesce(componente, 0)` de voltar — se ele
+      # voltar, 650 dívidas brutas, 650 dívidas líquidas e 284 liquidez secas reaparecem
+      # sem sustentação e o build reprova.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: >
+              not (
+                divida_bruta is not null
+                and (divida_bruta_circulante is null or divida_bruta_nao_circulante is null)
+              )
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not (divida_liquida is not null and caixa_e_equivalentes is null)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "not (liquidez_seca is not null and estoques is null)"
+
+      # O lucro dos controladores publicado só pode vir de bloco cuja identidade fecha.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: >
+              not (
+                lucro_liquido_controladores is not null
+                and status_lucro_controladores != 'IDENTIDADE_OK'
+              )
 
       - dbt_utils.expression_is_true:
           arguments:
@@ -103,32 +179,117 @@ models:
         description: Lucro consolidado do período, incluindo a parcela de não controladores.
       - name: lucro_liquido_controladores
         description: >
-          Lucro atribuído aos sócios da controladora. Nulo quando a empresa não
-          abre a linha, caso em que os indicadores recuam para o consolidado.
+          Lucro atribuído aos sócios da controladora, publicado APENAS quando a identidade
+          do bloco de atribuição fecha (total = controladores + não controladores) e não
+          contradiz o balanço. Nulo nos demais casos, e aí os indicadores recuam para o
+          consolidado, que é auto-consistente. Ver status_lucro_controladores.
+      - name: lucro_liquido_controladores_fonte
+        description: >
+          O que o pivot do seed elegeu na linha 3.x.01, sem validação. Preservado para
+          auditoria: mostra AZUL 2024 com +R$ 9,19 bi contra um prejuízo consolidado de
+          R$ 9,15 bi, e FINANCEIRA ALFA 2023 com 0 contra os R$ 18,578 mi resolvidos.
+      - name: origem_lucro_controladores
+        description: >
+          Código do bloco da DRE (3.09, 3.11 ou 3.13) de onde o valor resolvido veio.
+          É a linhagem do número: sem ela não dá para saber se o lucro dos controladores
+          saiu do mesmo bloco que o lucro consolidado.
+      - name: status_lucro_controladores
+        description: >
+          IDENTIDADE_OK = a soma fecha e o valor é usado.
+          SEM_SPLIT = a base não abre a linha (individual), recuo para o consolidado.
+          SPLIT_NAO_INFORMADO = a fonte zerou as duas linhas do bloco tendo lucro não nulo.
+          CONTRADICAO_DRE_BPP = a DRE atribui 100% do resultado aos não controladores
+          enquanto o balanço reporta zero de participação de não controladores. Estado
+          próprio, e não CONFLITO_FONTE, porque a testemunha é um saldo de encerramento
+          (estoque) usado contra um fluxo anual: sustenta suspeita, não prova. As fichas
+          ficam localizáveis para adjudicação documental.
+          BASE_DEGENERADA = a base que a política elegeu veio inteiramente zerada
+          (lucro, receita e ativo) enquanto a outra base tem número — 7 fichas / 4 empresas,
+          entre elas TIM 2024 e 2025. O defeito é da política consolidado/individual e não
+          desta coluna: `lucro_liquido` e `receita_liquida` continuam saindo zerados, e a
+          correção está pendente de decisão do mantenedor.
+          CONFLITO_FONTE = a soma não fecha, há mais de um bloco candidato, ou o lucro
+          eleito é zero havendo bloco irmão com total não nulo na mesma base.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['IDENTIDADE_OK', 'SEM_SPLIT', 'SPLIT_NAO_INFORMADO',
+                         'CONTRADICAO_DRE_BPP', 'BASE_DEGENERADA', 'CONFLITO_FONTE']
       - name: pl_minoritarios
         description: Participação dos acionistas não controladores dentro do PL.
       - name: patrimonio_liquido_controladores
         description: PL menos a participação de não controladores.
       - name: divida_bruta
         description: >
-          Empréstimos e financiamentos, circulante mais não circulante. Zero
-          quando a empresa não tem dívida ou não abre a conta — não distingue
-          os dois casos. Duas exceções de fonte com valor negativo estão
-          excluídas do teste: K-INFRA 2014 e VERT-VIRTUS 2019.
+          R-DIV-001. Empréstimos e financiamentos, circulante mais não circulante, publicada
+          apenas quando os DOIS componentes existem. Nula quando algum falta — antes disso,
+          650 fichas publicavam zero sem nenhum componente, e 617 delas são financeiras, que
+          não usam estas contas. Zero efetivamente reportado continua sendo zero.
+          Duas exceções de fonte com valor negativo estão excluídas do teste: K-INFRA 2014 e
+          VERT-VIRTUS 2019.
+      - name: status_divida_bruta
+        description: >
+          COMPLETA = os dois componentes existem · PARCIAL = só um existe, e um componente
+          sozinho não é a dívida bruta · AUSENTE = nenhum dos dois.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['COMPLETA', 'PARCIAL', 'AUSENTE']
       - name: divida_liquida
-        description: Dívida bruta menos caixa e equivalentes.
+        description: >
+          R-DIV-001. Dívida bruta menos caixa e equivalentes, publicada apenas quando a dívida
+          bruta existe E o caixa é conhecido. Subtrair um caixa ausente tratado como zero
+          devolveria a dívida bruta com outro nome.
+      - name: status_divida_liquida
+        description: >
+          COMPLETA · SEM_CAIXA = dívida conhecida, caixa não · DIVIDA_INDISPONIVEL.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['COMPLETA', 'SEM_CAIXA', 'DIVIDA_INDISPONIVEL']
+      - name: liquidez_seca
+        description: >
+          R-DIV-002. Ativo circulante menos estoques sobre passivo circulante, publicada
+          apenas quando os estoques são conhecidos. Com `coalesce(estoques, 0)` ela virava
+          cópia silenciosa da liquidez corrente em 284 fichas.
       - name: alavancagem
-        description: Dívida líquida sobre PL dos controladores.
+        description: >
+          Dívida líquida sobre PL dos controladores. Nula quando o PL não é positivo ou
+          quando a dívida líquida não está disponível (R-DIV-001).
+
       - name: cobertura_juros
         description: EBIT sobre despesas financeiras em valor absoluto.
       - name: margem_liquida
-        description: Lucro dos controladores sobre receita líquida.
-      - name: margem_liquida_consolidada
-        description: Lucro consolidado sobre receita líquida.
+        description: >
+          R-IND-001. Resultado atribuível aos sócios da ENTIDADE QUE REPORTA sobre a receita
+          líquida do mesmo período e da mesma base. Uma definição só, realizada em dois
+          contextos: em base CONSOLIDADO exige `lucro_liquido_controladores` validado
+          (`IDENTIDADE_OK`); em base INDIVIDUAL é o próprio `lucro_liquido`, porque
+          demonstração individual não tem participação de não controladores — medido, das
+          4.529 fichas individuais nenhuma tem `pl_minoritarios`, e as 3.911 linhas de "não
+          controladores" do BPP estão todas em base consolidada. Nula quando o componente
+          contratado falta. Quem quer o resultado total da base usa `margem_liquida_total`.
+      - name: margem_liquida_total
+        description: >
+          R-IND-002. Resultado TOTAL da base publicada sobre a receita líquida — inclui a
+          parcela dos não controladores quando `tipo_df = 'CONSOLIDADO'`. Renomeada em
+          2026-09-09: chamava-se `margem_liquida_consolidada`, nome impreciso porque a fórmula
+          usa o lucro total da base SELECIONADA, e em 4.529 fichas essa base é INDIVIDUAL, onde
+          não há consolidação nenhuma. Leia sempre junto de `tipo_df`.
       - name: roe
-        description: Lucro dos controladores sobre PL dos controladores.
-      - name: roe_consolidado
-        description: Lucro consolidado sobre PL consolidado.
+        description: >
+          R-IND-003. Mesmo numerador de `margem_liquida` (R-IND-001), sobre
+          `patrimonio_liquido_controladores`. Nulo quando o numerador contratado falta ou
+          quando o patrimônio não é positivo: razão sobre patrimônio negativo inverte a
+          leitura, e o indicador não existe nesse caso.
+      - name: roe_total
+        description: >
+          R-IND-004. Resultado TOTAL da base publicada sobre o patrimônio líquido total da
+          mesma base, este último apenas quando positivo. Renomeada em 2026-09-09 pela mesma
+          razão de `margem_liquida_total`. Leia sempre junto de `tipo_df`.
       - name: ativo_total
         description: >
           Nulo apenas quando a empresa registrou descrição corrompida na conta
