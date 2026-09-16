@@ -12,10 +12,10 @@
 > a um histórico completo de manifestos, execuções e incorporações.
 
 Documento canônico de **significado**. Enquanto `AGENTS.md` diz como se trabalha aqui e
-`AUDITORIA_ACURACIA_CHECKPOINT.md` guarda o histórico, este arquivo responde uma pergunta só:
+`documentacao/CONTINUIDADE.md` registra decisões e pendências, este arquivo responde uma pergunta só:
 **o que cada número publicado quer dizer, em qual contexto vale, e quando ele não existe.**
 
-Escrito em 2026-09-08, Etapa 1 de `PROXIMA_SEQUENCIA.md`. Cobre os conceitos e indicadores
+Iniciado em 2026-09-08. Cobre os conceitos e indicadores
 centrais; as demais famílias entram uma de cada vez.
 
 Regra de leitura: `[MEDIDO]` tem consulta e número · `[DECISÃO]` julgamento registrado, aberto

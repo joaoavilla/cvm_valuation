@@ -1,7 +1,7 @@
 # AGENTS.md — cvm_valuation
 
 Instruções para agentes de código (Claude Code, Codex, e outros que leiam este arquivo).
-Este é o documento canônico. `CLAUDE.md` aponta para ele.
+Este é o documento canônico. Configurações específicas de ferramentas são locais e não versionadas.
 
 ---
 

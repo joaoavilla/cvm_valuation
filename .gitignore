@@ -25,9 +25,14 @@ Thumbs.db
 **/*.quarto_ipynb
 
 # Ferramentas de agente (IA)
-# Versionados de propósito: AGENTS.md, CLAUDE.md, .claude/settings.json, .claude/skills/
-# — são contexto do projeto e devem acompanhar o clone.
-.claude/settings.local.json
-.claude/.user.json
+# Configuracoes locais; as regras compartilhadas permanecem em AGENTS.md.
+/.claude/
+/CLAUDE.md
 .codex/state/
 .aider*
+
+# Registros locais de sessoes; decisoes permanentes em documentacao/.
+/AUDITORIA_ACURACIA_CHECKPOINT.md
+/CHECKPOINT_2026-09-09.md
+/PROXIMA_SEQUENCIA.md
+/PR_REVISAO_FINAL.md
