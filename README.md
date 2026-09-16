@@ -1,5 +1,8 @@
 # cvm_valuation
 
+Documentação de engenharia: [contratos contábeis](CONTRATOS.md),
+[decisões e próximos passos](documentacao/CONTINUIDADE.md) e [regras de trabalho](AGENTS.md).
+
 Pipeline de dados sobre as demonstrações financeiras das companhias abertas brasileiras (CVM), com modelagem que separa **o período a que um valor se refere** do **documento em que ele foi publicado**.
 
 > **Estado:** em construção. A plataforma funciona ponta a ponta e há uma primeira camada de leitura (`docs/`, gerada por Quarto). Este README descreve o que há hoje, não o que se pretende.
